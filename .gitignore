@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 cache/pubchem_cache.json
 cache/*.tmp
+
+# Local/CI download cache for the smoke-run source CSVs.
+.ci-cache/
