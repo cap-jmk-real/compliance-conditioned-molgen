@@ -74,3 +74,11 @@ Status: all ok. All 14 are cited in the body (unsrt drops none). No dead/mismatc
 
 Weighted total: **8.7 / 10.** Minor revision. The only submission gate is making the (already-pinned) repo public,
 which is the author's action and is outside this task's authority.
+
+---
+## External panel (klaut.pro) final result on this commit
+klaut.pro agentic panel (5 reviewers): overall 5.95/10, rubric 7.5/10, 2/5 accept (needs 3), 0 open blockers.
+The one remaining major and all reject votes are the single-seed soundness issue: one training run per arm
+does not quantify training variance. Resolving it needs >=3 seeds with a paired test (new training runs),
+plus more target bands and a compute-matched baseline. Those are new experiments, out of scope for this
+preprint, and are listed in V2_TODO.md. No manuscript blocker remains.
