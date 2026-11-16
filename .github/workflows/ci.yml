@@ -1,0 +1,89 @@
+# Minimal CI: unit tests plus the CPU smoke path of the UV-Vis pipeline.
+#
+# Python 3.13 is required by the pinned root requirements (rdkit==2026.9.2,
+# pandas==3.1.1 and the rest all publish cp313 wheels). The uv/ extra
+# dependencies declare 3.11+ and were tested on 3.13.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            uv/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # CPU wheel (~200 MB). The default PyPI torch wheel is a 539 MB
+          # CUDA build that this job does not need. Filter the unpinned
+          # torch line out of uv/requirements.txt so pip cannot replace it.
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          grep -vE '^torch([[:space:]]|$)' uv/requirements.txt > "${RUNNER_TEMP}/uv-requirements-no-torch.txt"
+          pip install -r "${RUNNER_TEMP}/uv-requirements-no-torch.txt"
+
+      - name: Unit tests
+        run: python -m pytest tests
+
+      - name: Cache source CSVs for the smoke run
+        uses: actions/cache@v6
+        with:
+          path: .ci-cache
+          key: smoke-source-csvs-uvvis-rev02-zinc250k
+
+      - name: Download source CSVs if missing or invalid
+        run: |
+          set -euo pipefail
+          mkdir -p .ci-cache
+
+          valid_uvvis() {
+            [ -s .ci-cache/chromophore_rev02.csv ] && \
+              head -1 .ci-cache/chromophore_rev02.csv | grep -q "Chromophore"
+          }
+          valid_zinc() {
+            [ -s .ci-cache/zinc250k.csv ] && \
+              head -1 .ci-cache/zinc250k.csv | grep -q "smiles"
+          }
+          fetch() {
+            local dest="$1" url="$2"
+            curl -fL --retry 5 --retry-delay 5 --retry-all-errors -o "$dest" "$url"
+          }
+
+          if ! valid_uvvis; then
+            fetch .ci-cache/chromophore_rev02.csv \
+              "https://raw.githubusercontent.com/howardwang1997/AI4PS/12113ccff61edaf1ac83294aef876a8782ddfd99/raw_data/DB%20for%20chromophore_Sci_Data_rev02.csv"
+          fi
+          if ! valid_zinc; then
+            fetch .ci-cache/zinc250k.csv \
+              "https://raw.githubusercontent.com/aspuru-guzik-group/chemical_vae/master/models/zinc_properties/250k_rndm_zinc_drugs_clean_3.csv"
+          fi
+
+          valid_uvvis
+          valid_zinc
+
+      - name: CPU smoke run
+        run: |
+          python uv/run.py --smoke \
+            --ckpt-root "${{ runner.temp }}/t25-ckpt" \
+            --uvvis-local .ci-cache/chromophore_rev02.csv \
+            --zinc-local .ci-cache/zinc250k.csv

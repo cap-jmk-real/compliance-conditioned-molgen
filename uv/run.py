@@ -112,7 +112,9 @@ def smoke(args):
             "--epochs", "1", "--batch-size", "64"])
     run("evaluate (smoke)", [
         "uv.evaluate", "--corpus", "uv/data/corpus_smoke.csv",
-        "--vocab", "uv/artifacts/vocab_smoke.json", "--n-samples", "200",
+        "--vocab", "uv/artifacts/vocab_smoke.json",
+        "--predictor", "uv/artifacts/predictor_smoke.joblib",
+        "--n-samples", "200",
         "--out-json", "uv/artifacts/eval_smoke.json",
         "--out-md", "uv/artifacts/eval_smoke.md"])
 
