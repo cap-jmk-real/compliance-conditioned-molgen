@@ -1,0 +1,8 @@
+# UV-Vis steered-generation experiment. Python 3.11+ (tested on 3.13).
+rdkit
+selfies
+scikit-learn
+pandas
+joblib
+numpy
+torch
