@@ -1,0 +1,128 @@
+entry_id,list,entry_no,name,structural_class,smarts_feasibility
+candidate_list:002,candidate_list,,"4,4'-[2,2,2-trifluoro-1-(trifluoromethyl)ethylidene]diphenol and its salts",group,parent_plus_forms
+candidate_list:004,candidate_list,,"tetra(sodium/potassium) 7-[(E)-{2-acetamido-4-[(E)-(4-{[4-chloro-6-({2-[(4-fluoro-6-{[4-(vinylsulfonyl)phenyl]amino}-1,3,5-triazine-2-yl)amino]propyl}amino)-1,3,5-triazine-2-yl]amino}-5-sulfonato-1-na",no_structure,single_not_in_pubchem
+candidate_list:007,candidate_list,,reaction mass of: triphenylthiophosphate and tertiary butylated phenyl derivatives,variable_composition,not_structural
+candidate_list:011,candidate_list,,"6-[(C10-C13)-alkyl-(branched, unsaturated)-2,5-dioxopyrrolidin-1-yl]hexanoic acid",variable_composition,not_structural
+candidate_list:014,candidate_list,,Oligomerisation and alkylation reaction products of 2-phenylpropene and phenol,variable_composition,not_structural
+candidate_list:021,candidate_list,,"reaction mass of 2,2,3,3,5,5,6,6-octafluoro-4-(1,1,1,2,3,3,3-heptafluoropropan-2-yl)morpholine and 2,2,3,3,5,5,6,6-octafluoro-4-(heptafluoropropyl)morpholine",variable_composition,not_structural
+candidate_list:022,candidate_list,,Perfluoroheptanoic acid and its salts,group,parent_plus_forms
+candidate_list:025,candidate_list,,bis(2-ethylhexyl) tetrabromophthalate covering any of the individual isomers and/or combinations thereof,group,parent_plus_forms
+candidate_list:034,candidate_list,,"(±)-1,7,7-trimethyl-3-[(4-methylphenyl)methylene]bicyclo[2.2.1]heptan-2-one covering any of the individual isomers and/or combinations thereof (4-MBC)",group,parent_plus_forms
+candidate_list:035,candidate_list,,"Phenol, alkylation products (mainly in para position) with C12-rich branched alkyl chains from oligomerisation, covering any individual isomers and/ or combinations thereof (PDDP)",variable_composition,not_structural
+candidate_list:036,candidate_list,,"orthoboric acid, sodium salt",group,parent_plus_forms
+candidate_list:037,candidate_list,,Medium-chain chlorinated paraffins (MCCP),variable_composition,not_structural
+candidate_list:040,candidate_list,,2-(4-tert-butylbenzyl)propionaldehyde and its individual stereoisomers,group,parent_plus_forms
+candidate_list:041,candidate_list,,"2,2-bis(bromomethyl)propane-1,3-diol (BMP); 2,2-dimethylpropan-1-ol, tribromo derivative/3-bromo-2,2-bis(bromomethyl)-1-propanol (TBNPA); 2,3-dibromo-1-propanol (2,3-DBPA)",group,parent_plus_forms
+candidate_list:043,candidate_list,,"Dioctyltin dilaurate, stannane, dioctyl-, bis(coco acyloxy) derivs., and any other stannane, dioctyl-, bis(fatty acyloxy) derivs. wherein C12 is the predominant carbon number of the fatty acyloxy moie",variable_composition,not_structural
+candidate_list:049,candidate_list,,Perfluorobutane sulfonic acid (PFBS) and its salts,group,parent_plus_forms
+candidate_list:053,candidate_list,,"Tris(4-nonylphenyl, branched and linear) phosphite (TNPP)",group,parent_plus_forms
+candidate_list:056,candidate_list,,"2,3,3,3-tetrafluoro-2-(heptafluoropropoxy)propionic acid, its salts and its acyl halides",group,parent_plus_forms
+candidate_list:063,candidate_list,,"Terphenyl, hydrogenated",no_structure,not_structural
+candidate_list:073,candidate_list,,"Reaction products of 1,3,4-thiadiazolidine-2,5-dithione, formaldehyde and 4-heptylphenol, branched and linear (RP-HP)",variable_composition,not_structural
+candidate_list:079,candidate_list,,"1,6,7,8,9,14,15,16,17,17,18,18-Dodecachloropentacyclo[12.2.1.16,9.02,13.05,10]octadeca-7,15-diene (“Dechlorane Plus”™)",group,parent_plus_forms
+candidate_list:080,candidate_list,,Perfluorohexane-1-sulphonic acid and its salts,group,parent_plus_forms
+candidate_list:082,candidate_list,,Nonadecafluorodecanoic acid (PFDA) and its sodium and ammonium salts,group,parent_plus_forms
+candidate_list:083,candidate_list,,"4-heptylphenol, branched and linear",group,parent_plus_forms
+candidate_list:086,candidate_list,,Perfluorononan-1-oic-acid and its sodium and ammonium salts,group,parent_plus_forms
+candidate_list:091,candidate_list,,"5-sec-butyl-2-(2,4-dimethylcyclohex-3-en-1-yl)-5-methyl-1,3-dioxane [1], 5-sec-butyl-2-(4,6-dimethylcyclohex-3-en-1-yl)-5-methyl-1,3-dioxane [2]",group,parent_plus_forms
+candidate_list:092,candidate_list,,"1,2-benzenedicarboxylic acid, di-C6-10-alkyl esters or mixed decyl and hexyl and octyl diesters",variable_composition,not_structural
+candidate_list:093,candidate_list,,"Reaction mass of 2-ethylhexyl 10-ethyl-4,4-dioctyl-7-oxo-8-oxa-3,5-dithia-4-stannatetradecanoate and 2-ethylhexyl 10-ethyl-4-[[2-[(2-ethylhexyl)oxy]-2-oxoethyl]thio]-4-octyl-7-oxo-8-oxa-3,5-dithia-4-s",variable_composition,not_structural
+candidate_list:094,candidate_list,,Cadmium sulphate,multiple_structures,parent_plus_forms
+candidate_list:099,candidate_list,,Sodium peroxometaborate,no_structure,single_not_in_pubchem
+candidate_list:100,candidate_list,,"Sodium perborate, perboric acid, sodium salt",group,parent_plus_forms
+candidate_list:102,candidate_list,,"1,2-Benzenedicarboxylic acid, dihexyl ester, branched and linear",group,family_pattern
+candidate_list:115,candidate_list,,"4-Nonylphenol, branched and linear, ethoxylated",variable_composition,not_structural
+candidate_list:121,candidate_list,,"Sulfurous acid, lead salt, dibasic",group,not_structural
+candidate_list:122,candidate_list,,"Silicic acid, lead salt",group,parent_plus_forms
+candidate_list:123,candidate_list,,"Silicic acid (H2Si2O5), barium salt (1:1), lead-doped",group,not_structural
+candidate_list:124,candidate_list,,"Pyrochlore, antimony lead yellow",no_structure,not_structural
+candidate_list:142,candidate_list,,Hexahydromethylphthalic anhydride,group,parent_plus_forms
+candidate_list:146,candidate_list,,"Fatty acids, C16-18, lead salts",group,not_structural
+candidate_list:154,candidate_list,,"Cyclohexane-1,2-dicarboxylic anhydride",group,parent_plus_forms
+candidate_list:157,candidate_list,,"Acetic acid, lead salt, basic",group,not_structural
+candidate_list:160,candidate_list,,"4-Nonylphenol, branched and linear",group,parent_plus_forms
+candidate_list:163,candidate_list,,"4-(1,1,3,3-tetramethylbutyl)phenol, ethoxylated",variable_composition,not_structural
+candidate_list:164,candidate_list,,"4,4'-oxydianiline and its salts",group,parent_plus_forms
+candidate_list:169,candidate_list,,"1,2-Benzenedicarboxylic acid, dipentyl ester, branched and linear",group,family_pattern
+candidate_list:183,candidate_list,,Zirconia Aluminosilicate Refractory Ceramic Fibres,variable_composition,not_structural
+candidate_list:192,candidate_list,,"Formaldehyde, oligomeric reaction products with aniline",variable_composition,not_structural
+candidate_list:198,candidate_list,,Aluminosilicate Refractory Ceramic Fibres,variable_composition,not_structural
+candidate_list:204,candidate_list,,Hydrazine,multiple_structures,parent_plus_forms
+candidate_list:207,candidate_list,,"1,2-Benzenedicarboxylic acid, di-C7-11-branched and linear alkyl esters",group,not_structural
+candidate_list:208,candidate_list,,"1,2-Benzenedicarboxylic acid, di-C6-8-branched alkyl esters, C7-rich",variable_composition,not_structural
+candidate_list:215,candidate_list,,Acids generated from chromium trioxide and their oligomers,group,partial
+candidate_list:223,candidate_list,,"Disodium tetraborate, anhydrous",multiple_structures,parent_plus_forms
+candidate_list:228,candidate_list,,"Pitch, coal tar, high-temp.",variable_composition,not_structural
+candidate_list:233,candidate_list,,"Anthracene oil, anthracene-low",variable_composition,not_structural
+candidate_list:234,candidate_list,,"Anthracene oil, anthracene paste, distn. lights",variable_composition,not_structural
+candidate_list:235,candidate_list,,"Anthracene oil, anthracene paste, anthracene fraction",variable_composition,not_structural
+candidate_list:236,candidate_list,,"Anthracene oil, anthracene paste",variable_composition,not_structural
+candidate_list:237,candidate_list,,Anthracene oil,variable_composition,not_structural
+candidate_list:240,candidate_list,,Sodium dichromate,multiple_structures,parent_plus_forms
+candidate_list:242,candidate_list,,Hexabromocyclododecane (HBCDD),group,parent_plus_forms
+candidate_list:251,candidate_list,,"Alkanes, C10-13, chloro (Short Chain Chlorinated Paraffins)",variable_composition,not_structural
+annex_xiv_authorisation_list:003,annex_xiv_authorisation_list,03,Hexabromocyclododecane (HBCDD),group,parent_plus_forms
+annex_xiv_authorisation_list:017,annex_xiv_authorisation_list,17,Acids generated from chromium trioxide and their oligomers,group,partial
+annex_xiv_authorisation_list:018,annex_xiv_authorisation_list,18,Sodium dichromate,multiple_structures,parent_plus_forms
+annex_xiv_authorisation_list:023,annex_xiv_authorisation_list,23,"Formaldehyde, oligomeric reaction products with aniline",variable_composition,not_structural
+annex_xiv_authorisation_list:034,annex_xiv_authorisation_list,34,"1,2-Benzenedicarboxylic acid, di-C6-8-branched alkyl esters, C7-rich",variable_composition,not_structural
+annex_xiv_authorisation_list:035,annex_xiv_authorisation_list,35,"1,2-Benzenedicarboxylic acid, di-C7-11-branched and linear alkyl esters",group,not_structural
+annex_xiv_authorisation_list:036,annex_xiv_authorisation_list,36,"1,2-Benzenedicarboxylic acid, dipentyl ester, branched and linear",group,family_pattern
+annex_xiv_authorisation_list:040,annex_xiv_authorisation_list,40,Anthracene oil,variable_composition,not_structural
+annex_xiv_authorisation_list:041,annex_xiv_authorisation_list,41,"Pitch, coal tar, high-temp.",variable_composition,not_structural
+annex_xiv_authorisation_list:042,annex_xiv_authorisation_list,42,"4-(1,1,3,3-tetramethylbutyl)phenol, ethoxylated",variable_composition,not_structural
+annex_xiv_authorisation_list:043,annex_xiv_authorisation_list,43,"4-Nonylphenol, branched and linear, ethoxylated",variable_composition,not_structural
+annex_xiv_authorisation_list:044,annex_xiv_authorisation_list,44,"1,2-Benzenedicarboxylic acid, dihexyl ester, branched and linear",group,family_pattern
+annex_xiv_authorisation_list:046,annex_xiv_authorisation_list,46,"1,2-benzenedicarboxylic acid, di-C6-10-alkyl esters or mixed decyl and hexyl and octyl diesters",variable_composition,not_structural
+annex_xiv_authorisation_list:048,annex_xiv_authorisation_list,48,"Sodium perborate, perboric acid, sodium salt",group,parent_plus_forms
+annex_xiv_authorisation_list:049,annex_xiv_authorisation_list,49,Sodium peroxometaborate,no_structure,single_not_in_pubchem
+annex_xiv_authorisation_list:050,annex_xiv_authorisation_list,50,"5-sec-butyl-2-(2,4-dimethylcyclohex-3-en-1-yl)-5-methyl-1,3-dioxane [1], 5-sec-butyl-2-(4,6-dimethylcyclohex-3-en-1-yl)-5-methyl-1,3-dioxane [2]",group,parent_plus_forms
+annex_xiv_authorisation_list:057,annex_xiv_authorisation_list,57,"Reaction products of 1,3,4-thiadiazolidine-2,5-dithione, formaldehyde and 4-heptylphenol, branched and linear (RP-HP)",variable_composition,not_structural
+annex_xiv_authorisation_list:059,annex_xiv_authorisation_list,59,"Reaction mass of 2-ethylhexyl 10-ethyl-4,4-dioctyl-7-oxo-8-oxa-3,5-dithia-4-stannatetradecanoate and 2-ethylhexyl 10-ethyl-4-[[2-[(2-ethylhexyl)oxy]-2-oxoethyl]thio]-4-octyl-7-oxo-8-oxa-3,5-dithia-4-s",variable_composition,not_structural
+annex_xvii_restriction_list:001,annex_xvii_restriction_list,01,Polychlorinated terphenyls (PCTs),group,family_pattern
+annex_xvii_restriction_list:003,annex_xvii_restriction_list,03,"Liquid substances or mixtures fulfilling the criteria for any of the following hazard classes or categories set out in Annex I to Regulation (EC) No 1272/2008: (a) hazard classes 2.1 to 2.4, 2.6 and 2",hazard_class_defined,not_structural
+annex_xvii_restriction_list:006,annex_xvii_restriction_list,06,Asbestos fibres,variable_composition,not_structural
+annex_xvii_restriction_list:008,annex_xvii_restriction_list,08,"Polybromobiphenyls, Polybrominatedbiphenyls (PBB)",group,family_pattern
+annex_xvii_restriction_list:009,annex_xvii_restriction_list,09,Entry 9,group,parent_plus_forms
+annex_xvii_restriction_list:010,annex_xvii_restriction_list,10,Entry 10,group,parent_plus_forms
+annex_xvii_restriction_list:011,annex_xvii_restriction_list,11,Volatile esters of bromoacetic acids,group,family_pattern
+annex_xvii_restriction_list:012,annex_xvii_restriction_list,12,2-naphthylamine and its salts,group,parent_plus_forms
+annex_xvii_restriction_list:013,annex_xvii_restriction_list,13,Benzidine and its salts,group,parent_plus_forms
+annex_xvii_restriction_list:015,annex_xvii_restriction_list,15,4-Aminobiphenyl xenylamine and its salts,group,parent_plus_forms
+annex_xvii_restriction_list:016,annex_xvii_restriction_list,16,Lead carbonates,group,parent_plus_forms
+annex_xvii_restriction_list:017,annex_xvii_restriction_list,17,Lead sulphates,group,parent_plus_forms
+annex_xvii_restriction_list:018,annex_xvii_restriction_list,18,Mercury compounds,group,element_rule
+annex_xvii_restriction_list:020,annex_xvii_restriction_list,19,Arsenic compounds,group,element_rule
+annex_xvii_restriction_list:021,annex_xvii_restriction_list,20,Organostannic compounds,group,element_rule
+annex_xvii_restriction_list:023,annex_xvii_restriction_list,23,Cadmium and its compounds,group,element_rule
+annex_xvii_restriction_list:025,annex_xvii_restriction_list,25,"Monomethyl-dichloro-diphenyl methane Trade name: Ugilec 121, Ugilec 21",no_structure,parent_plus_forms
+annex_xvii_restriction_list:026,annex_xvii_restriction_list,26,"Monomethyl-dibromo-diphenyl methane bromobenzylbromotoluene, mixture of isomers",variable_composition,not_structural
+annex_xvii_restriction_list:027,annex_xvii_restriction_list,27,Nickel and its compounds,group,element_rule
+annex_xvii_restriction_list:028,annex_xvii_restriction_list,28,"Substances which are classified as carcinogen category 1A or 1B in Part 3 of Annex VI to Regulation (EC) No 1272/2008 and are listed in Appendix 1 or Appendix 2, respectively.",hazard_class_defined,not_structural
+annex_xvii_restriction_list:029,annex_xvii_restriction_list,29,"Substances which are classified as germ cell mutagen category 1A or 1B in Part 3 of Annex VI to Regulation (EC) No 1272/2008 and are listed in Appendix 3 or Appendix 4, respectively.",hazard_class_defined,not_structural
+annex_xvii_restriction_list:030,annex_xvii_restriction_list,30,"Substances which are classified as reproductive toxicant category 1A or 1B in Part 3 of Annex VI to Regulation (EC) No 1272/2008 and are listed in Appendix 5 or Appendix 6, respectively.",hazard_class_defined,not_structural
+annex_xvii_restriction_list:031,annex_xvii_restriction_list,31,Creosote and Creosote related substances,variable_composition,not_structural
+annex_xvii_restriction_list:038,annex_xvii_restriction_list,40,"Substances classified as flammable gases category 1 or 2, flammable liquids categories 1, 2 or 3, flammable solids category 1 or 2,substances and mixtures which, in contact with water, emit flammable ",hazard_class_defined,not_structural
+annex_xvii_restriction_list:040,annex_xvii_restriction_list,43,Azocolourants and Azodyes,group,partial
+annex_xvii_restriction_list:041,annex_xvii_restriction_list,45,"Diphenylether, octabromo derivative C12H2Br8O",group,parent_plus_forms
+annex_xvii_restriction_list:042,annex_xvii_restriction_list,46,Entry 46,group,parent_plus_forms
+annex_xvii_restriction_list:043,annex_xvii_restriction_list,46a,Nonylphenol ethoxylates (C2H4O)nC15H24O,group,not_structural
+annex_xvii_restriction_list:044,annex_xvii_restriction_list,47,Chromium VI compounds,group,partial
+annex_xvii_restriction_list:047,annex_xvii_restriction_list,50,Polycyclic-aromatic hydrocarbons (PAH),group,partial_pah
+annex_xvii_restriction_list:048,annex_xvii_restriction_list,50a,Polycyclic aromatic hydrocarbons (PAH),group,partial_pah
+annex_xvii_restriction_list:049,annex_xvii_restriction_list,51,Diisobutyl phthalate (DIBP); Dibutyl phthalate (DBP); Benzyl butyl phthalate (BBP); Bis(2-ethylhexyl) phthalate (DEHP),group,parent_plus_forms
+annex_xvii_restriction_list:050,annex_xvii_restriction_list,52,The following phthalates (or other CAS and EC numbers covering the substance) (See group members) [Entry 52],group,family_pattern
+annex_xvii_restriction_list:053,annex_xvii_restriction_list,56,Methylenediphenyl diisocyanate (MDI) including the following specific isomers (See group members):,group,family_pattern
+annex_xvii_restriction_list:059,annex_xvii_restriction_list,62,Entry 62,group,parent_plus_forms
+annex_xvii_restriction_list:060,annex_xvii_restriction_list,63,Lead and its compounds,group,element_rule
+annex_xvii_restriction_list:062,annex_xvii_restriction_list,65,Inorganic ammonium salts,group,element_rule
+annex_xvii_restriction_list:064,annex_xvii_restriction_list,68,"C9-C14 linear and/or branched perfluorocarboxylic acids (C9-C14 PFCAs), their salts and C9-C14 PFCAs-related substances, perfluorononan-1-oic acid (PFNA); nonadecafluorodecanoic acid (PFDA); henicosaf",group,partial
+annex_xvii_restriction_list:066,annex_xvii_restriction_list,70,Octamethylcyclotetrasiloxane (D4); Decamethylcyclopentasiloxane (D5); dodecamethylcyclohexasiloxane (D6),group,family_pattern
+annex_xvii_restriction_list:068,annex_xvii_restriction_list,72,"The following substances which are classified as carcinogenic, mutagenic or toxic for reproduction, category 1A or 1B (See group members) [Entry 72]",hazard_class_defined,not_structural
+annex_xvii_restriction_list:069,annex_xvii_restriction_list,73,"(3,3,4,4,5,5,6,6,7,7,8,8,8-tridecafluorooctyl)silanetriol and any of its mono-, di- or tri-O-(alkyl) derivatives",group,family_pattern
+annex_xvii_restriction_list:070,annex_xvii_restriction_list,74,Diisocyanates,group,family_pattern
+annex_xvii_restriction_list:071,annex_xvii_restriction_list,75,Substances in tattoo inks and permanent make up,hazard_class_defined,not_structural
+annex_xvii_restriction_list:073,annex_xvii_restriction_list,77,formaldehyde and formaldehyde releasers,group,partial
+annex_xvii_restriction_list:074,annex_xvii_restriction_list,78,synthetic polymer microparticles,variable_composition,not_structural
+annex_xvii_restriction_list:075,annex_xvii_restriction_list,79,"undecafluorohexanoic acid (PFHxA), its salts and related substances",group,partial
+annex_xvii_restriction_list:078,annex_xvii_restriction_list,82,Per- and polyfluoroalkyl substances (PFAS),group,family_pattern

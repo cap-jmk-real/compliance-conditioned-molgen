@@ -1,0 +1,48 @@
+{
+ "candidate_list": {
+  "source_page": "https://echa.europa.eu/candidate-list-table",
+  "status": "ok",
+  "rows_reported_by_page": 253,
+  "retrieved": "2026-11-16T04:48:54+01:00",
+  "files": [
+   "raw/candidate_list_p1.html",
+   "raw/candidate_list_p2.html",
+   "raw/candidate_list_p3.html"
+  ]
+ },
+ "annex_xiv_authorisation_list": {
+  "source_page": "https://echa.europa.eu/authorisation-list",
+  "status": "ok",
+  "rows_reported_by_page": 59,
+  "retrieved": "2026-11-16T04:45:48+01:00",
+  "files": [
+   "raw/annex_xiv_authorisation_list_p1.html"
+  ]
+ },
+ "annex_xvii_restriction_list": {
+  "source_page": "https://echa.europa.eu/substances-restricted-under-reach",
+  "status": "ok",
+  "rows_reported_by_page": 79,
+  "retrieved": "2026-11-16T04:45:57+01:00",
+  "files": [
+   "raw/annex_xvii_restriction_list_p1.html"
+  ]
+ },
+ "reach_consolidated_eurlex": {
+  "source_page": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02006R1907-20260622",
+  "celex": "02006R1907-20260622",
+  "http_status": 200,
+  "retrieved": "2026-11-16T04:53:26+01:00",
+  "status": "ok",
+  "files": [
+   "raw/reach_consolidated.html"
+  ],
+  "bytes": 4850673
+ },
+ "ec_inventory": {
+  "source_page": "https://echa.europa.eu/information-on-chemicals/ec-inventory",
+  "fetched_url": "https://echa.europa.eu/documents/10162/17222/ec_inventory_en.csv/326d9adb-27ed-5460-a2da-4f651b81e4b3",
+  "status": "gap: URL answered with a page titled 'Homepage - ECHA' and no file",
+  "retrieved": "2026-11-16T05:10:08+01:00"
+ }
+}

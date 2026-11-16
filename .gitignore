@@ -1,0 +1,7 @@
+# Raw downloads stay local (large, re-fetchable). fetch_meta.json is committed.
+raw/*
+!raw/fetch_meta.json
+__pycache__/
+.pytest_cache/
+cache/pubchem_cache.json
+cache/*.tmp

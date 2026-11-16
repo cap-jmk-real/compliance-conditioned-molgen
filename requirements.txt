@@ -1,0 +1,8 @@
+# Python 3.13. Pinned versions used for the committed results.
+rdkit==2026.9.2
+requests==2.34.2
+pandas==3.1.1
+beautifulsoup4==4.15.0
+lxml==6.1.3
+playwright==1.65.2
+pytest==9.2.0
