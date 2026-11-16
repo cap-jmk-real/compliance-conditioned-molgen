@@ -59,3 +59,12 @@ The ECHA scripts need a display and a Chrome binary at `/usr/bin/google-chrome`.
 - PubChem can map a CAS number to a wrong or arbitrary record. The cross-check against the name lookup and an element check catch some of this. Entries confirmed by only one lookup carry more risk.
 - Hydrates and anhydrous forms of one substance count as several structures here.
 - This is a measurement of the lists as published on 16 Nov 2026. It is not legal advice and does not decide whether any use of a substance is permitted.
+
+## UV-Vis steered generation (step 2 of the track)
+
+The `uv/` folder adds a small, runnable experiment: steer a SELFIES molecular language
+model toward a target UV-Vis absorption band while passing the structural-pattern screen
+in `smarts_rules.py`, compared with an identical unsteered model. It is ordinary dye and
+materials optics. No synthesis, reactions, routes or toxicology. The SMARTS rules are a
+screening metric only, never a target or a reward. See `uv/README.md` for the Colab A100
+recipe and `uv/RESULTS.md` for the measured validation result.

@@ -1,0 +1,31 @@
+{
+  "band_lo": 400.0,
+  "band_hi": 450.0,
+  "n_samples": 3000,
+  "arms": {
+    "plain": {
+      "arm": "plain",
+      "n_sampled": 3000,
+      "n_valid": 3000,
+      "n_unique": 2998,
+      "validity": 1.0,
+      "uniqueness": 0.9993,
+      "novelty": 1.0,
+      "screen_pass_rate": 0.9686,
+      "mean_pred_abs_nm": 378.0,
+      "frac_in_band": 0.2445
+    },
+    "steered": {
+      "arm": "steered",
+      "n_sampled": 3000,
+      "n_valid": 3000,
+      "n_unique": 2996,
+      "validity": 1.0,
+      "uniqueness": 0.9987,
+      "novelty": 1.0,
+      "screen_pass_rate": 0.9693,
+      "mean_pred_abs_nm": 378.48,
+      "frac_in_band": 0.257
+    }
+  }
+}
