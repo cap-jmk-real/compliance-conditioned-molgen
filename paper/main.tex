@@ -43,7 +43,7 @@ trained on a public UV-Vis dataset (held-out mean absolute error 24.0~nm). Over 
 samples per arm and a band of 400 to 450~nm, steering raises the predicted in-band fraction
 from 0.187 to 0.237, a difference of 0.050 with a 95\% bootstrap confidence interval of
 [0.043, 0.058] that excludes zero. The structural-screen pass rate rises from 0.964 to
-0.999, and validity stays at 1.000. The effect is real and modest, and most
+0.999, and validity (RDKit parse validity) stays at 1.000. The effect is real and modest, and most
 samples still fall outside the band, and the property values are surrogate predictions, not
 measurements. The generator was trained once per arm at a fixed seed, so the interval
 reflects sampling at fixed weights and the study is exploratory. The structural rules act
@@ -101,7 +101,8 @@ The training corpus is ZINC250k, the standard drug-like subset of ZINC
 249{,}455 molecules. Each molecule is encoded as a SELFIES string
 \cite{krenn2020selfies}. SELFIES guarantees that every decoded string is a valence-valid
 molecule, so the reported validity reflects RDKit \cite{rdkit} parse success and not raw
-string syntax. Autoregressive SMILES and SELFIES language models are a standard family for
+string syntax. Parse validity is not chemical plausibility, and Section~\ref{sec:limitations}
+reports a diagnostic audit of radical content and implausible species in a sampled subset. Autoregressive SMILES and SELFIES language models are a standard family for
 de novo generation \cite{blaschke2020reinvent, wang2021mcmg}, and SELFIES is used here so
 that validity is not a confound between the two arms.
 
@@ -283,6 +284,21 @@ Several limits bound these results.
   \item The bootstrap resamples generated molecules, which are not fully independent draws
   from one model. The interval should be read as a sampling check at fixed weights, not as
   a test across training runs.
+  \item Validity is RDKit parse validity and does not imply chemical plausibility. In a
+  diagnostic export of 2{,}000 valid molecules per arm from the same trained weights, about
+  9\% carried radical electrons (182 of 2{,}000 in the plain arm, 192 of 2{,}000 in the
+  steered arm), and some structures are chemically implausible, for example a species
+  containing an \texttt{=[N+]Br} group. The headline validity of 1.000 should be read as
+  parse validity, not as a plausibility or synthesisability claim.
+  \item The structural-screen result is dominated by one rule family. In the same export
+  every screen failure came from a single SMARTS family, a PFAS pattern set, 61 of 2{,}000
+  in the plain arm and 2 of 2{,}000 in the steered arm, with no other family firing. The
+  rise in screen pass rate is therefore effectively a drop in PFAS-pattern matches and not a
+  broad structural cleanup, and the clean-screen token mostly learns to avoid that one
+  family.
+  \item Uniqueness and novelty are computed within each arm. Across arms, 6 SMILES appear in
+  both the plain and steered export, which is expected for two models trained on the same
+  corpus and does not affect the per-arm metrics.
   \item Only one target band was tested. Whether the effect holds across the spectrum, and
   whether it scales with the share of in-band training examples, is untested here.
   \item The structural screen is a pattern-matching metric, not a legal or safety
