@@ -33,25 +33,22 @@ an exploratory single-seed study}}
 \begin{abstract}
 \noindent
 A small molecular language model can be steered toward a target optical property by
-prepending control tokens to its training sequences. The size of that effect is rarely
-measured against an identical unsteered model at scale. This study makes that comparison
-for one optical target. A two-layer GRU language model over SELFIES strings is trained on
+prepending control tokens to its training sequences. How large that effect is, measured
+against an identical unsteered model at scale, is rarely reported. A two-layer GRU language model over SELFIES strings is trained on
 ZINC250k (249{,}455 molecules) in two arms that share architecture, data and training
 budget. The steered arm prepends two prefix control tokens, a target UV-Vis absorption
 band and a structural-screen flag. The plain arm receives none. Absorption maxima are
-scored by a surrogate model, a Morgan ECFP fingerprint fed to a gradient-boosted
-regressor trained on a public UV-Vis dataset, with a held-out mean absolute error of
-24.0~nm. Over 20{,}000 samples per arm and a target band of 400 to 450~nm, prefix steering
-raises the fraction of molecules predicted to fall in band from 0.187 to 0.237, a
-difference of 0.050 with a 95\% bootstrap confidence interval of [0.043, 0.058] that
-excludes zero. The structural-screen pass rate rises from 0.964 to 0.999. Validity stays
-at 1.000 in both arms, uniqueness stays at 0.9999 and 0.9998, and novelty at 0.9989 and
-0.9990. The effect is real and modest. These results come from a single training run per
-arm at a fixed seed, so the interval reflects sampling at fixed weights and not
-training-level variability, and the work is exploratory. Most samples still fall outside
-the band, and the property values are surrogate predictions, not measurements. The
-structural rules act only as a pass-or-fail screen and a conditioning flag. They are never
-a generation target and never a reward. Code and the evaluation artifacts are public.
+scored by a surrogate model, a Morgan ECFP fingerprint fed to a gradient-boosted regressor
+trained on a public UV-Vis dataset (held-out mean absolute error 24.0~nm). Over 20{,}000
+samples per arm and a band of 400 to 450~nm, steering raises the predicted in-band fraction
+from 0.187 to 0.237, a difference of 0.050 with a 95\% bootstrap confidence interval of
+[0.043, 0.058] that excludes zero. The structural-screen pass rate rises from 0.964 to
+0.999, and validity stays at 1.000. The effect is real and modest, and most
+samples still fall outside the band, and the property values are surrogate predictions, not
+measurements. The generator was trained once per arm at a fixed seed, so the interval
+reflects sampling at fixed weights and the study is exploratory. The structural rules act
+only as a pass-or-fail screen and a conditioning flag, never a generation target and never
+a reward. Code and evaluation artifacts are public.
 \end{abstract}
 
 \section{Introduction}
@@ -70,8 +67,10 @@ conditioning and guidance literature \cite{wang2021mcmg, vignac2023digress}, and
 baseline that hard-constraint methods set out to beat \cite{cardei2025cdd, christopher2025nsd}.
 The open practical question is how large the rate increase is for a concrete
 optical-property target, measured against an identical model that receives no conditioning
-signal, at a sample size large enough to separate the effect from sampling noise. This
-study measures that increase for the first UV-Vis absorption maximum on one target band.
+signal, at a sample size large enough to separate the effect from sampling noise. We
+quantify that increase for one primary UV-Vis absorption band, giving a controlled number
+for behaviour that the conditioning and guidance literature so far reports only
+qualitatively \cite{wang2021mcmg, vignac2023digress}.
 
 This is a controlled measurement of a known technique, not a new method. The contribution
 is empirical and deliberately narrow:
@@ -115,8 +114,8 @@ structures remain, with absorption maxima from 162 to 878~nm.
 
 Each structure is converted to a Morgan ECFP fingerprint (radius 2, 2048 bits) and passed
 to a scikit-learn \texttt{HistGradientBoostingRegressor} \cite{pedregosa2011scikit} with
-600 trees that predicts the first absorption maximum in nm. On a random held-out split
-(5{,}203 train, 643 test structures) the regressor reaches a mean absolute error (MAE) of
+600 trees that predicts the first absorption maximum in nm. On a random held-out split with a fixed seed (test fraction 0.1, seed 42), giving 5{,}203 train and
+643 test structures the regressor reaches a mean absolute error (MAE) of
 24.0~nm, a root-mean-square error (RMSE) of 38.2~nm and a coefficient of determination
 $R^2$ of 0.873. MAE and RMSE are both in nm, computed on the held-out structures with no
 normalisation. Every absorption value reported for a generated molecule is a prediction
@@ -185,7 +184,11 @@ difference. The mean predicted absorption maximum moves up by about 11~nm, from 
 376.9~nm. The structural-screen pass rate rises from 0.964 to 0.999. Validity is 1.000 in
 both arms, uniqueness is 0.9999 and 0.9998, and novelty is 0.9989 and 0.9990.
 Figure~\ref{fig:metrics} shows the per-arm metrics and Figure~\ref{fig:ci} shows the
-in-band fraction and the bootstrap interval on the difference.
+in-band fraction and the bootstrap interval on the difference. This interval measures
+sampling variability at fixed model weights. It does not capture variability across
+training runs or seeds, because the generator was trained once per arm
+(Section~\ref{sec:limitations}), so the result should be read as an exploratory point
+estimate with a sampling interval and not as a seed-stable conclusion.
 
 \begin{table}[htbp]
 \centering
@@ -193,7 +196,10 @@ in-band fraction and the bootstrap interval on the difference.
 target band 400 to 450~nm. Each value is a point estimate over that arm's samples from a
 single trained model. Absorption values are surrogate predictions, not measurements. The
 steered arm raises the structural-screen pass rate and the in-band fraction while keeping
-validity, uniqueness and novelty near-identical to the plain arm.}
+validity, uniqueness and novelty near-identical to the plain arm. Values are shown to four
+decimal places, and the abstract and running text round the same values to three. The
+table gives point estimates with no dispersion, and the 95\% bootstrap confidence interval
+on the steering effect is in Figure~\ref{fig:ci}.}
 \label{tab:main}
 \begin{tabular}{lcc}
 \toprule
@@ -228,7 +234,10 @@ Uncertainty on the steering effect is quantified in Figure~\ref{fig:ci}.}
 each arm. Right: the steered-minus-plain difference in in-band fraction with its 95\%
 bootstrap confidence interval over 2{,}000 resamples of the per-sample indicators. The
 dashed line marks zero. The interval [0.043, 0.058] excludes zero, so the sign of the
-effect is stable under resampling of the generated molecules.}
+effect is stable under resampling of the generated molecules. In the left panel the x-axis
+is the arm (plain or steered) and the y-axis is the in-band fraction (unitless). The
+right panel shows the steered-minus-plain difference with the percentile interval over 2{,}000
+resamples of the 20{,}000 per-sample indicators in each arm.}
 \label{fig:ci}
 \end{figure}
 
@@ -292,7 +301,9 @@ projection on the same task.
 
 Code, training and evaluation scripts, and the evaluation result artifacts are public at
 \url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. The experiment code is
-pinned at commit \texttt{0c102b6} on \texttt{main}. The numbers in this paper are produced
+pinned at commit \texttt{0c102b6} on \texttt{main}. The pinned software environment (Python
+3.13, RDKit 2026.9.2, and the packages listed in \texttt{requirements.txt}) is in the
+repository, so the exact result artifact and figures can be regenerated. The numbers in this paper are produced
 from the committed evaluation artifact by the figure script in \texttt{paper/figures/}. The
 public datasets used are ZINC250k \cite{sterling2015zinc15} and the UV-Vis dataset of Joung
 et al. \cite{joung2020uvvis}.
