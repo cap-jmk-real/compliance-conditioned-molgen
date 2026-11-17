@@ -33,22 +33,23 @@ an exploratory single-seed study}}
 \begin{abstract}
 \noindent
 A small molecular language model can be steered toward a target optical property by
-prepending control tokens to its training sequences. How large that effect is, measured
-against an identical unsteered model at scale, is rarely reported. A two-layer GRU language model over SELFIES strings is trained on
-ZINC250k (249{,}455 molecules) in two arms that share architecture, data and training
+prepending control tokens to its training sequences, yet how large that effect is against
+an identical unsteered model at scale is rarely reported. We train a two-layer GRU
+language model over SELFIES strings (a string encoding whose every decoded string is a
+valid molecule) on ZINC250k (249{,}455 molecules). Two arms share architecture, data and
 budget. The steered arm prepends two prefix control tokens, a target UV-Vis absorption
-band and a structural-screen flag. The plain arm receives none. Absorption maxima are
-scored by a surrogate model, a Morgan ECFP fingerprint fed to a gradient-boosted regressor
-trained on a public UV-Vis dataset (held-out mean absolute error 24.0~nm). Over 20{,}000
-samples per arm and a band of 400 to 450~nm, steering raises the predicted in-band fraction
-from 0.187 to 0.237, a difference of 0.050 with a 95\% bootstrap confidence interval of
-[0.043, 0.058] that excludes zero. The structural-screen pass rate rises from 0.964 to
-0.999, and validity (RDKit parse validity) stays at 1.000. The effect is real and modest, and most
-samples still fall outside the band, and the property values are surrogate predictions, not
-measurements. The generator was trained once per arm at a fixed seed, so the interval
-reflects sampling at fixed weights and the study is exploratory. The structural rules act
-only as a pass-or-fail screen and a conditioning flag, never a generation target and never
-a reward. Code and evaluation artifacts are public.
+band and a structural-screen flag; the plain arm receives none. A surrogate model scores
+absorption maxima: a Morgan fingerprint fed to a gradient-boosted regressor trained on a
+public UV-Vis dataset, with a held-out mean absolute error of 24.0~nm. Over 20{,}000
+samples per arm and a band of 400 to 450~nm, steering raises the predicted in-band
+fraction from 0.187 to 0.237. The difference is 0.050, with a 95\% bootstrap confidence
+interval of [0.043, 0.058] that excludes zero. The structural-screen pass rate rises from
+0.964 to 0.999, and validity (RDKit parse validity) stays at 1.000. The effect is real but
+modest: most samples still fall outside the band, and the values are surrogate
+predictions, not measurements. These headline numbers use one training seed per arm; two
+further seeds probe training variance (Section~\ref{sec:seeds}). By construction the
+structural rules enter only as a screen and a conditioning flag, absent from the training
+loss and from any reward. Code and evaluation artifacts are public.
 \end{abstract}
 
 \section{Introduction}
@@ -62,9 +63,12 @@ generated sequence satisfies a stated rule by construction
 \cite{cardei2025cdd, christopher2025nsd}.
 
 Soft conditioning, the family this study uses, raises the rate of on-target samples
-without any per-sample guarantee. This behaviour is reported qualitatively across the
-conditioning and guidance literature \cite{wang2021mcmg, vignac2023digress}, and it is the
-baseline that hard-constraint methods set out to beat \cite{cardei2025cdd, christopher2025nsd}.
+without any per-sample guarantee. Control-token and descriptor conditioning of this kind
+has a long line of prior work in both molecular generation and language modelling
+\cite{segler2018generating, kotsias2020steering, keskar2019ctrl, wang2021mcmg}, where the
+rate increase is reported qualitatively \cite{wang2021mcmg, vignac2023digress}; it is also
+the baseline that hard-constraint methods set out to beat \cite{cardei2025cdd, christopher2025nsd}.
+The present study measures the size of that increase for one band (Section~\ref{sec:results}).
 The open practical question is how large the rate increase is for a concrete
 optical-property target, measured against an identical model that receives no conditioning
 signal, at a sample size large enough to separate the effect from sampling noise. We
@@ -72,8 +76,9 @@ quantify that increase for one primary UV-Vis absorption band, giving a controll
 for behaviour that the conditioning and guidance literature so far reports only
 qualitatively \cite{wang2021mcmg, vignac2023digress}.
 
-This is a controlled measurement of a known technique, not a new method. The contribution
-is empirical and deliberately narrow:
+This study is a controlled measurement of a known technique, prefix-token soft
+conditioning of a molecular language model \cite{segler2018generating, kotsias2020steering, keskar2019ctrl},
+not a new method. The contribution is empirical and deliberately narrow:
 \begin{itemize}
   \item A controlled two-arm comparison in which the only difference is two prefix
   control tokens, measured over 20{,}000 samples per arm with a bootstrap confidence
@@ -88,11 +93,13 @@ exploratory. No priority or novelty claim is made, and the limitations in
 Section~\ref{sec:limitations} state the scope.
 
 The chemistry here is ordinary optical and dye chemistry. The structural rules are a
-screening metric and a conditioning flag. They are never optimised toward and never used
-as a reward. There is no synthesis, no reaction planning and no route prediction anywhere
-in this work.
+screening metric and a conditioning flag. They enter the generator only as the prefix
+conditioning flag defined in Section~\ref{sec:methods}; they are absent from the training
+loss and from any reward, as the public training code shows. There is no synthesis, no
+reaction planning and no route prediction anywhere in this work.
 
 \section{Methods}
+\label{sec:methods}
 
 \subsection{Data}
 
@@ -118,8 +125,10 @@ to a scikit-learn \texttt{HistGradientBoostingRegressor} \cite{pedregosa2011scik
 600 trees that predicts the first absorption maximum in nm. On a random held-out split with a fixed seed (test fraction 0.1, seed 42), giving 5{,}203 train and
 643 test structures the regressor reaches a mean absolute error (MAE) of
 24.0~nm, a root-mean-square error (RMSE) of 38.2~nm and a coefficient of determination
-$R^2$ of 0.873. MAE and RMSE are both in nm, computed on the held-out structures with no
-normalisation. Every absorption value reported for a generated molecule is a prediction
+$R^2$ of 0.873, where $R^2$ is the standard coefficient of determination computed on
+the held-out test structures with no adjustment. MAE and RMSE are both in nm,
+computed on the held-out structures with no normalisation. All structure parsing and
+the Morgan fingerprints use RDKit 2026.9.2 \cite{rdkit}. Every absorption value reported for a generated molecule is a prediction
 from this model, not a measurement, and the model error bounds how far those predictions
 can be trusted.
 
@@ -127,13 +136,14 @@ can be trusted.
 
 The generator is a two-layer GRU language model over SELFIES tokens, with an embedding
 dimension of 128 and a hidden size of 256. Both arms are trained with the Adam optimiser
-at a learning rate of $10^{-3}$, a batch size of 512, and a token-level cross-entropy
+at a learning rate of $10^{-3}$ (a dimensionless scalar), a batch size of 512, and a token-level cross-entropy
 next-token loss. The two arms are identical in architecture, data and budget. The only
 difference is that the steered arm prepends two control tokens to every training sequence
 right after the start token:
 \begin{itemize}
   \item a band token, set to \texttt{<BAND\_IN>} when the molecule's predicted absorption
-  maximum falls inside the target band and \texttt{<BAND\_OUT>} otherwise,
+  maximum falls inside the target band, meaning $400 \le \hat{\lambda} \le 450$~nm with both
+  edges included, and \texttt{<BAND\_OUT>} otherwise,
   \item a screen token, set to \texttt{<CLEAN>} when the molecule passes the structural
   screen and \texttt{<FLAG>} otherwise.
 \end{itemize}
@@ -146,8 +156,9 @@ The structural screen is a set of SMARTS patterns evaluated with RDKit. A molecu
 when it matches none of the flagged structural families. Substructure alerts of this kind,
 such as the BRENK and PAINS catalogues \cite{brenk2008, baell2010pains}, are a standard
 deterministic filtering layer in cheminformatics. Here the screen is used only as a
-pass-or-fail metric and as the conditioning flag described above. It is never a generation
-target and never a reward signal.
+pass-or-fail metric and as the conditioning flag described above. It is absent from the
+training loss, and no reward or optimisation signal is derived from it, so it is never a
+generation target.
 
 \subsection{Training and evaluation}
 
@@ -160,20 +171,39 @@ evaluated, and no checkpoint was chosen on the evaluation set. The generator was
 once per arm at a fixed seed. Training was not repeated across seeds, so the reported
 uncertainty is sampling uncertainty at fixed weights.
 
-Evaluation samples a fixed count per arm and reports validity (valid decodes over
-samples), uniqueness (unique valid structures over valid samples), novelty (unique
-structures absent from the training corpus), following the MOSES and GuacaMol reporting
-conventions \cite{polykovskiy2020moses, brown2019guacamol}, together with the
-structural-screen pass rate, the mean predicted absorption maximum, and the in-band
-fraction. The steering effect is the difference in in-band fraction between the steered and
-plain arms. Its uncertainty is a 95\% bootstrap confidence interval over 2{,}000
-resamples. Each arm's per-sample in-band indicators are resampled with replacement
-independently, and the percentile interval is taken on the difference of the two arm means.
-The resampling unit is the generated molecule. This treats the samples within one trained
-model as the population, so the interval covers sampling variation at fixed weights and
-does not cover variation across training seeds.
+Evaluation samples a fixed count $N$ per arm. Let $f(x)$ be the surrogate-predicted
+absorption maximum in nm of a generated molecule $x$, and let the in-band indicator be
+$I(x) = \mathbf{1}[\,400 \le f(x) \le 450\,]$, equal to $1$ when $f(x)$ lies in the target
+band and $0$ otherwise. We report the following rates, each a unitless fraction in
+$[0,1]$:
+\begin{itemize}
+  \item validity: valid RDKit decodes divided by samples;
+  \item uniqueness: distinct valid structures divided by valid decodes;
+  \item novelty: distinct valid structures absent from the training corpus divided by
+  distinct valid structures;
+  \item structural-screen pass rate: distinct valid structures matching no flagged family
+  divided by distinct valid structures;
+  \item in-band fraction $\hat{p} = \frac{1}{N}\sum_{i=1}^{N} I(x_i)$.
+\end{itemize}
+These follow the Molecular Sets (MOSES) and GuacaMol reporting conventions
+\cite{polykovskiy2020moses, brown2019guacamol}. We also report the mean predicted
+absorption maximum $\frac{1}{N}\sum_{i} f(x_i)$ in nm.
+
+The steering effect is $\delta = \hat{p}_{\mathrm{steered}} - \hat{p}_{\mathrm{plain}}$,
+the difference of in-band fractions between the arms. Its uncertainty is a 95\% percentile
+bootstrap confidence interval over the per-sample in-band indicators at fixed model
+weights, computed as follows: for $j = 1,\dots,B$ with $B = 2{,}000$, resample each arm's
+indicators with replacement to the original size, compute
+$\delta_j = \bar{I}^{\,\mathrm{steered}}_j - \bar{I}^{\,\mathrm{plain}}_j$, and take the
+$2.5$ and $97.5$ percentiles of the sorted $\{\delta_j\}$ as the interval. The resampling
+unit is the generated molecule, so the interval covers sampling variation at fixed weights
+and does not cover variation across training seeds; the latter is addressed in
+Section~\ref{sec:seeds}. Because generated molecules from one model are not fully
+independent draws, this molecule-level resampling can understate the true variance
+(Section~\ref{sec:limitations}).
 
 \section{Results}
+\label{sec:results}
 
 \subsection{Main comparison}
 
@@ -242,6 +272,55 @@ resamples of the 20{,}000 per-sample indicators in each arm.}
 \label{fig:ci}
 \end{figure}
 
+\subsection{Training-seed robustness}
+\label{sec:seeds}
+
+The main comparison above uses one training seed per arm (seed~0). To probe how much of
+the effect is training variance rather than a stable property of the steering, both arms
+are retrained at two further seeds (seeds~1 and 2) under the identical architecture, data
+and step budget (618 epochs, 301{,}584 steps per arm), and each seed is evaluated with the
+same 20{,}000-sample protocol. Only the generator weight initialisation and the
+data-shuffle order change with the seed; the surrogate property model and the corpus are
+held fixed at their seed-0 values, so the three runs are compared under one surrogate and
+one corpus and any spread reflects generator training alone. The runner and the
+aggregation script are public (\texttt{colab\_run\_seeds.py}, \texttt{uv/aggregate\_seeds.py}).
+
+Table~\ref{tab:seeds} will report the mean and sample standard deviation across the three
+seeds for each arm, together with the per-seed steering effect $\delta$ and a paired check
+on the three paired differences. With only three seeds that paired test is badly
+underpowered, so it is reported as a direction-and-size check, not a significance claim.
+
+%% TODO(multi-seed): fill Table~\ref{tab:seeds} from
+%%   python -m uv.aggregate_seeds uv/results/eval_results.json \
+%%       <drive>/ckpt-seeds/eval_seed1.json <drive>/ckpt-seeds/eval_seed2.json
+%% once the two additional A100 seeds finish. Do NOT hand-enter numbers; copy the
+%% aggregator's mean +/- sd output. Then update the abstract's "two further training
+%% seeds" sentence and the single-seed bullet in Section~\ref{sec:limitations}.
+\begin{table}[htbp]
+\centering
+\caption{Three-seed robustness (seeds 0, 1, 2), 20{,}000 samples per arm, band 400 to
+450~nm. Each cell is the mean $\pm$ sample standard deviation across the three seeds.
+\textbf{TODO: to be completed once the two additional seeds finish; values are not yet
+available and must be copied from \texttt{uv/aggregate\_seeds.py}, never hand-entered.}}
+\label{tab:seeds}
+\begin{tabular}{lcc}
+\toprule
+Metric & Plain (mean $\pm$ sd) & Steered (mean $\pm$ sd) \\
+\midrule
+Validity & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+Uniqueness & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+Novelty & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+Structural-screen pass rate & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+In-band fraction (400--450~nm) & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+Mean predicted absorption (nm) & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+\midrule
+\multicolumn{3}{l}{Steering effect $\delta$ (steered $-$ plain in-band fraction):} \\
+\multicolumn{3}{l}{\quad per seed: TODO, TODO, TODO; \quad mean $\pm$ sd: TODO $\pm$ TODO} \\
+\multicolumn{3}{l}{\quad paired $t$ (df $=2$): TODO; two-sided $p$: TODO (underpowered at $n=3$)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{CPU-scale pilot}
 
 An earlier pilot on CPU used 20 epochs over a 6{,}000-molecule ZINC subset and 3{,}000
@@ -277,13 +356,25 @@ Several limits bound these results.
   scored by the same surrogate, and the qualitative reading that the effect is real and
   modest rests on the bootstrap interval, but the absolute in-band fractions are model
   estimates and not physical measurements.
-  \item The generator was trained once per arm at a fixed seed. Training was not repeated
-  across seeds, so the bootstrap interval captures sampling at fixed weights and not
-  training-level variance. The results are exploratory for that reason and are not sold as
-  a seed-stable headline.
-  \item The bootstrap resamples generated molecules, which are not fully independent draws
-  from one model. The interval should be read as a sampling check at fixed weights, not as
-  a test across training runs.
+  \item The headline numbers come from one training seed per arm (seed~0), so the bootstrap
+  interval captures sampling at fixed weights and not training-level variance. To address
+  this, both arms are retrained at two further seeds under the identical budget and
+  summarised in Section~\ref{sec:seeds}; until those cross-seed numbers are in, the
+  single-seed headline is exploratory and is not sold as a seed-stable result.
+  \item The bootstrap resamples individual generated molecules, which are not fully
+  independent draws from one model (duplicates and shared model structure induce
+  correlation), so molecule-level resampling can understate the true variance. A
+  model-level or block resampling scheme, and the cross-seed spread in
+  Section~\ref{sec:seeds}, are the appropriate checks across training runs; the interval
+  here should be read only as a sampling check at fixed weights.
+  \item The steering effect is measured only as an aggregate rate increase (the in-band
+  fraction), not as a per-sample guarantee. Soft prefix conditioning shifts the output
+  distribution toward the target without controlling any individual sample, and this study
+  quantifies only the distribution-level shift.
+  \item Both arms share one architecture, data split and step budget, so the comparison is
+  compute-matched by construction. No separately compute-tuned baseline is reported: the
+  contribution is a controlled two-arm measurement, not a claim about the best achievable
+  model at a given budget.
   \item Validity is RDKit parse validity and does not imply chemical plausibility. In a
   diagnostic export of 2{,}000 valid molecules per arm from the same trained weights, about
   9\% carried radical electrons (182 of 2{,}000 in the plain arm, 192 of 2{,}000 in the
@@ -308,10 +399,12 @@ Several limits bound these results.
 \section{Future work}
 
 Natural extensions are several training seeds with a seed-level paired test, multiple
-target bands across the spectrum, measured validation of a sampled subset in place of
-surrogate scores, and a joint objective that steers a property target and a structural
-screen together and compares soft prefix conditioning against in-sampler constraint
-projection on the same task.
+target bands across the spectrum, broadening the structural screen beyond the single
+PFAS-dominated family to multiple structural classes so the pass-rate effect is not
+driven by one pattern set, measured validation of a sampled subset in place of surrogate
+scores, and a joint objective that steers a property target and a structural screen
+together and compares soft prefix conditioning against in-sampler constraint projection on
+the same task.
 
 \section*{Data and code availability}
 
@@ -322,7 +415,12 @@ pinned at commit \texttt{0c102b6} on \texttt{main}. The pinned software environm
 repository, so the exact result artifact and figures can be regenerated. The numbers in this paper are produced
 from the committed evaluation artifact by the figure script in \texttt{paper/figures/}. The
 public datasets used are ZINC250k \cite{sterling2015zinc15} and the UV-Vis dataset of Joung
-et al. \cite{joung2020uvvis}.
+et al. \cite{joung2020uvvis}. All fixed random seeds are recorded in the code and not only
+in prose: the surrogate train/validation split uses scikit-learn seeds 42 and 7, the
+corpus subsample uses NumPy seed 0, and every generator run takes an explicit
+\texttt{--seed} (0 for the headline run, 1 and 2 for the additional seeds) that seeds
+Python, NumPy, torch and CUDA and the data-shuffle order, with the same seed used at
+sampling time, so each run reproduces exactly.
 
 \section*{Conflicts of interest}
 
