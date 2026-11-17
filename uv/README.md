@@ -79,3 +79,12 @@ last checkpoint. The target band defaults to 450 to 550 nm and is set with `--ba
   epochs in minutes on an A100, large enough to reach high validity on ZINC-like molecules.
   SELFIES guarantees syntactic validity of the decoded strings, so validity reflects RDKit
   parse success.
+
+
+## Steering meta-search (exp/steering-metasearch)
+
+Stronger steering options (`uv/steering.py`: logit guidance, REINVENT-style fine-tuning,
+surrogate-filtered self-training) and a successive-halving meta-search over them
+(`python -m uv.metasearch ...`, cost projection with `python -m uv.metasearch_cost ...`,
+second UV predictor in `uv/holdout_predictor.py`). Read `uv/STEERING_PLAN.md` first. This
+does not change the existing pipeline or the preprint's method.
