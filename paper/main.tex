@@ -42,8 +42,10 @@ error 24.0~nm) scores absorption maxima. We train three seeds per arm,
 each evaluated on 20{,}000 samples per arm for a band of 400 to 450~nm. Steering raises the
 predicted in-band fraction from $0.185 \pm 0.006$ to $0.252 \pm 0.004$ (mean $\pm$ sample
 standard deviation across seeds). The steering effect is
-$0.068 \pm 0.010$, positive in every seed (0.059 to 0.078), with a seed-level 95\%
-$t$-interval of [0.043, 0.092] ($n=3$, exploratory). The structural-screen pass rate rises from 0.963 to 0.999,
+$0.068 \pm 0.010$ and is positive in every seed (0.059 to 0.078); a paired $t$-test across
+the three seeds gives a seed-level 95\% confidence interval of [0.043, 0.092] and $p=0.007$,
+and each run's own bootstrap 95\% interval also excludes zero (we treat $n=3$ as exploratory,
+not a powered test). The structural-screen pass rate rises from 0.963 to 0.999,
 and validity (RDKit parse validity) stays at 1.000. A repeat of seed~0 on different GPU
 hardware gave a smaller effect of 0.050, so run-to-run variation exceeds the within-run
 bootstrap intervals. The effect is real but modest: most samples still fall outside the
@@ -65,9 +67,10 @@ generated sequence satisfies a stated rule by construction
 Soft conditioning, the family this study uses, raises the rate of on-target samples
 without any per-sample guarantee. Control-token and descriptor conditioning of this kind
 has a long line of prior work in both molecular generation and language modelling
-\cite{segler2018generating, kotsias2020steering, keskar2019ctrl, wang2021mcmg}, where the
-rate increase is reported qualitatively \cite{wang2021mcmg, vignac2023digress}; it is also
-the baseline that hard-constraint methods set out to beat \cite{cardei2025cdd, christopher2025nsd}.
+\cite{segler2018generating, kotsias2020steering, keskar2019ctrl, wang2021mcmg}. That prior
+work reports the rate increase only qualitatively \cite{wang2021mcmg, vignac2023digress}. It
+is also the baseline that hard-constraint methods set out to beat
+\cite{cardei2025cdd, christopher2025nsd}.
 The present study measures the size of that increase for one band (Section~\ref{sec:results}).
 The open practical question is how large the rate increase is for a concrete
 optical-property target, measured against an identical model that receives no conditioning
@@ -442,16 +445,12 @@ Code, training and evaluation scripts, and the evaluation result artifacts are p
 \url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. The training and
 evaluation code used for every run, including the multi-seed runner, is pinned at commit
 \texttt{2b02589}; the aggregation, comparison and figure scripts are in the same
-repository. The per-seed evaluation artifacts
-of the three RTX~3060 seeds are in \nolinkurl{uv/results/seeds_rtx3060/}, their aggregate
-(\nolinkurl{uv/aggregate_seeds.py} output) in
-\nolinkurl{uv/results/aggregate_rtx3060_seeds012.json}, the A100 seed-0 artifact in
-\nolinkurl{uv/results/eval_results.json}, and the hardware comparison
-(\nolinkurl{uv/compare_runs.py} output) in
-\nolinkurl{uv/results/hw_repro_seed0_a100_vs_rtx3060.json}. The pinned software
+repository. The per-seed evaluation artifacts of the three RTX~3060 seeds, their aggregate (the
+seed-aggregation script's output), the A100 seed-0 artifact and the hardware comparison are
+all committed under the results directory of that repository. The pinned software
 environment (Python 3.13, RDKit 2026.9.2, and the packages listed in
 \texttt{requirements.txt}) is in the repository. The figures are produced from these
-artifacts by the script in \nolinkurl{paper/figures/}, and every number in the tables is
+artifacts by the figure script in the repository, and every number in the tables is
 copied from the aggregation and comparison outputs. The public datasets used are ZINC250k
 \cite{sterling2015zinc15} and the UV-Vis dataset of Joung et al. \cite{joung2020uvvis}. All
 fixed random seeds are recorded in the code and not only in prose: the surrogate
