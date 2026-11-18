@@ -17,9 +17,8 @@
 \setlength{\parskip}{4pt}
 \setlength{\parindent}{0pt}
 
-\title{\textbf{Prefix-token steering of a SELFIES language model toward a\\
-target UV-Vis absorption band under a structural screen:\\
-an exploratory three-seed study}}
+\title{\textbf{Prefix-token steering of a SELFIES language model\\
+toward a UV-Vis absorption band: a three-seed study}}
 
 \author{Julian M. Kleber\,\orcidlink{0000-0001-5518-0932}\\
 \small ORCID: 0000-0001-5518-0932\\
@@ -44,7 +43,7 @@ training seeds per arm, with 20{,}000 samples per arm and seed and a band of 400
 450~nm, steering raises the predicted in-band fraction from $0.185 \pm 0.006$ to
 $0.252 \pm 0.004$ (mean $\pm$ sample standard deviation). The steering effect is
 $0.068 \pm 0.010$, positive in every seed (0.059 to 0.078), with a seed-level 95\%
-$t$-interval of [0.043, 0.092]. The structural-screen pass rate rises from 0.963 to 0.999,
+$t$-interval of [0.043, 0.092] ($n=3$, exploratory). The structural-screen pass rate rises from 0.963 to 0.999,
 and validity (RDKit parse validity) stays at 1.000. A repeat of seed~0 on different GPU
 hardware gave a smaller effect of 0.050, so run-to-run variation exceeds the within-run
 bootstrap intervals. The effect is real but modest: most samples still fall outside the
@@ -166,18 +165,20 @@ generation target.
 \subsection{Training and evaluation}
 
 All three seeds (0, 1 and 2) of both arms were trained and evaluated on a single
-NVIDIA RTX 3060 GPU; these runs give every primary number in this paper. Each run covered
-301{,}584 steps (618 epochs) per arm at 34.7 to 36.3 training steps per second, about 139
-to 145 minutes of training per arm, with final training losses between 0.599 and 0.628.
+NVIDIA GeForce RTX 3060 (12~GB; driver 550.163.01; Python 3.13.5, PyTorch 2.6.0 with CUDA
+12.4, scikit-learn 1.9.1, NumPy 2.5.5, RDKit 2026.9.2); these runs give every primary number
+in this paper. Each run covered 301{,}584 steps (618 epochs) per arm at 34.7 to 36.3
+training steps per second, about 139 to 145 minutes of training per arm, with final
+training losses between 0.599 and 0.628 (per-run log in
+\nolinkurl{uv/results/seeds_rtx3060/RUNLOG.md}).
 Only the generator weight initialisation and the data-shuffle order change with the seed
 (the \texttt{--seed} flag seeds Python, NumPy, torch and CUDA and offsets the shuffle
 order). The surrogate model and the corpus are rebuilt deterministically from their fixed
 seeds, and the surrogate's held-out metrics are identical in every run, so all runs are
 scored by the same surrogate and any spread across seeds reflects generator training alone.
 
-For comparison, seed~0 was also trained and evaluated on a Colab NVIDIA A100-SXM4-40GB
-(40.5 training steps per second in a short calibration workload, about 52.5 minutes of
-training per arm, final training loss 0.605). That run predates the explicit seeding code:
+For comparison, seed~0 was also trained and evaluated, with the same budget and
+evaluation protocol, on a Colab NVIDIA A100-SXM4-40GB. That run predates the explicit seeding code:
 it used the same data-shuffle order and sampling seed as seed~0 but an unseeded weight
 initialisation, and neither platform forces deterministic cuDNN kernels. It is therefore an
 independent replicate on different hardware, not a bitwise repeat, and it is reported only
