@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import random
 import sys
 import time
 
@@ -26,6 +27,23 @@ from torch.nn.utils.rnn import pad_sequence
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from colab_checkpoint import CheckpointStore, Heartbeat  # noqa: E402
 from uv import gen_model  # noqa: E402
+
+
+def set_seed(seed):
+    """Seed every RNG that affects a training run so a given --seed is reproducible.
+
+    Covers Python ``random``, NumPy, torch (CPU) and CUDA. This seeds model weight
+    initialisation and any torch sampling; the data-shuffle RNG is seeded separately
+    per epoch in ``batches`` with an offset derived from this seed. We deliberately do
+    not force cuDNN into fully deterministic mode: the goal is independent, seed-varied
+    training runs to quantify training variance, not bitwise determinism, and the
+    seed-0 run that the paper reports did not pin cuDNN either.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def make_sequences(df, vocab, steered, band_lo, band_hi):
@@ -68,12 +86,20 @@ def main():
     ap.add_argument("--band-hi", type=float, default=550.0)
     ap.add_argument("--ckpt-every", type=int, default=50)
     ap.add_argument("--heartbeat-every", type=int, default=10)
+    ap.add_argument("--seed", type=int, default=0,
+                    help="run seed; seeds python/numpy/torch/cuda, the data-shuffle "
+                         "order, and (when --run-dir is not given) the checkpoint "
+                         "directory name. seed 0 reproduces the original run.")
     args = ap.parse_args()
 
+    set_seed(args.seed)
+
     out = args.out or f"uv/artifacts/generator_{args.arm}.pt"
-    run_dir = args.run_dir or f"/content/drive/MyDrive/t25-checkpoints/uv-generator-{args.arm}"
+    seed_suffix = "" if args.seed == 0 else f"-seed{args.seed}"
+    run_dir = (args.run_dir
+               or f"/content/drive/MyDrive/t25-checkpoints/uv-generator-{args.arm}{seed_suffix}")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"arm={args.arm} device={device}", flush=True)
+    print(f"arm={args.arm} device={device} seed={args.seed}", flush=True)
 
     df = pd.read_csv(args.corpus)
     print(f"corpus {len(df)} molecules", flush=True)
@@ -117,7 +143,8 @@ def main():
     step = start_step
     model.train()
     for epoch in range(args.epochs):
-        for batch in batches(seqs, args.batch_size, vocab.pad_id, seed=epoch):
+        for batch in batches(seqs, args.batch_size, vocab.pad_id,
+                              seed=args.seed * 100_000 + epoch):
             if step < start_step:
                 step += 1
                 continue
