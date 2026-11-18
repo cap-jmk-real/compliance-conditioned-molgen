@@ -37,7 +37,7 @@ def set_seed(seed):
     per epoch in ``batches`` with an offset derived from this seed. We deliberately do
     not force cuDNN into fully deterministic mode: the goal is independent, seed-varied
     training runs to quantify training variance, not bitwise determinism, and the
-    seed-0 run that the paper reports did not pin cuDNN either.
+    original A100 seed-0 run did not pin cuDNN either.
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -89,7 +89,8 @@ def main():
     ap.add_argument("--seed", type=int, default=0,
                     help="run seed; seeds python/numpy/torch/cuda, the data-shuffle "
                          "order, and (when --run-dir is not given) the checkpoint "
-                         "directory name. seed 0 reproduces the original run.")
+                         "directory name. seed 0 keeps the data-shuffle order of the "
+                         "original A100 run, whose weight init was not seeded.")
     args = ap.parse_args()
 
     set_seed(args.seed)

@@ -91,6 +91,21 @@ def _betai(a, b, x):
     return 1.0 - front * _betacf(b, a, 1.0 - x) / b
 
 
+def t_quantile_two_sided(alpha, df):
+    """Critical value c with P(|T| > c) = alpha for Student-t with df degrees of freedom.
+
+    Solved by bisection on t_two_sided_p, so no SciPy is needed (df=2, alpha=0.05 gives
+    4.3027)."""
+    lo, hi = 0.0, 1.0e3
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if t_two_sided_p(mid, df) > alpha:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
 def t_two_sided_p(t, df):
     """Two-sided p-value for a t statistic with df degrees of freedom."""
     if df <= 0:
@@ -191,12 +206,17 @@ def main():
         df = len(diffs) - 1
         t = md / (sdd / math.sqrt(len(diffs))) if sdd > 0 else float("inf")
         p = t_two_sided_p(t, df) if math.isfinite(t) else 0.0
+        tcrit = t_quantile_two_sided(0.05, df)
+        half = tcrit * sdd / math.sqrt(len(diffs))
         eff.update({"mean_diff": md, "sd_diff": sdd, "cohens_dz": dz,
-                    "paired_t": t, "df": df, "two_sided_p": p})
+                    "paired_t": t, "df": df, "two_sided_p": p,
+                    "t_crit_95": tcrit, "ci95_mean_diff": [md - half, md + half]})
         lines.append(f"- mean diff across {len(diffs)} seeds: {md:+.4f} "
                      f"(sd {sdd:.4f})")
         lines.append(f"- standardised effect d_z = mean/sd = {dz:.2f}")
         lines.append(f"- paired t = {t:.3f}, df = {df}, two-sided p = {p:.4f}")
+        lines.append(f"- seed-level 95% t-interval on the mean diff (t_crit {tcrit:.4f}): "
+                     f"[{md - half:+.4f}, {md + half:+.4f}]")
         n_pos = sum(1 for d in diffs if d > 0)
         if n_pos == len(diffs):
             sign_note = "the effect is positive in every seed above"

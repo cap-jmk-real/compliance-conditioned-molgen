@@ -19,7 +19,7 @@
 
 \title{\textbf{Prefix-token steering of a SELFIES language model toward a\\
 target UV-Vis absorption band under a structural screen:\\
-an exploratory single-seed study}}
+an exploratory three-seed study}}
 
 \author{Julian M. Kleber\,\orcidlink{0000-0001-5518-0932}\\
 \small ORCID: 0000-0001-5518-0932\\
@@ -32,22 +32,23 @@ an exploratory single-seed study}}
 
 \begin{abstract}
 \noindent
-A small molecular language model can be steered toward a target optical property by
-prepending control tokens to its training sequences, yet how large that effect is against
-an identical unsteered model at scale is rarely reported. We train a two-layer GRU
+Prefix control tokens can steer a molecular language model toward a target optical
+property, yet the effect size against an identical unsteered model is rarely reported. We train a two-layer GRU
 language model over SELFIES strings (a string encoding whose every decoded string is a
 valid molecule) on ZINC250k (249{,}455 molecules). Two arms share architecture, data and
 budget. The steered arm prepends two prefix control tokens, a target UV-Vis absorption
-band and a structural-screen flag; the plain arm receives none. A surrogate model scores
-absorption maxima: a Morgan fingerprint fed to a gradient-boosted regressor trained on a
-public UV-Vis dataset, with a held-out mean absolute error of 24.0~nm. Over 20{,}000
-samples per arm and a band of 400 to 450~nm, steering raises the predicted in-band
-fraction from 0.187 to 0.237. The difference is 0.050, with a 95\% bootstrap confidence
-interval of [0.043, 0.058] that excludes zero. The structural-screen pass rate rises from
-0.964 to 0.999, and validity (RDKit parse validity) stays at 1.000. The effect is real but
-modest: most samples still fall outside the band, and the values are surrogate
-predictions, not measurements. These headline numbers use one training seed per arm; two
-further seeds probe training variance (Section~\ref{sec:seeds}). By construction the
+band and a structural-screen flag; the plain arm receives none. A surrogate
+(Morgan fingerprint, gradient-boosted regressor, public UV-Vis data; held-out mean absolute
+error 24.0~nm) scores absorption maxima. Over three
+training seeds per arm, with 20{,}000 samples per arm and seed and a band of 400 to
+450~nm, steering raises the predicted in-band fraction from $0.185 \pm 0.006$ to
+$0.252 \pm 0.004$ (mean $\pm$ sample standard deviation). The steering effect is
+$0.068 \pm 0.010$, positive in every seed (0.059 to 0.078), with a seed-level 95\%
+$t$-interval of [0.043, 0.092]. The structural-screen pass rate rises from 0.963 to 0.999,
+and validity (RDKit parse validity) stays at 1.000. A repeat of seed~0 on different GPU
+hardware gave a smaller effect of 0.050, so run-to-run variation exceeds the within-run
+bootstrap intervals. The effect is real but modest: most samples still fall outside the
+band, and the values are surrogate predictions, not measurements. By construction the
 structural rules enter only as a screen and a conditioning flag, absent from the training
 loss and from any reward. Code and evaluation artifacts are public.
 \end{abstract}
@@ -81,15 +82,17 @@ conditioning of a molecular language model \cite{segler2018generating, kotsias20
 not a new method. The contribution is empirical and deliberately narrow:
 \begin{itemize}
   \item A controlled two-arm comparison in which the only difference is two prefix
-  control tokens, measured over 20{,}000 samples per arm with a bootstrap confidence
-  interval on the steering effect.
+  control tokens, repeated over three training seeds per arm with 20{,}000 samples per arm
+  and seed, reported as mean $\pm$ sample standard deviation across seeds together with
+  each run's bootstrap confidence interval on the steering effect.
+  \item A hardware reproducibility check that repeats seed~0 on a second GPU type.
   \item An honest account of the effect size, its uncertainty, and the limits of a
   surrogate property model whose error (24.0~nm) is about half the width of the target
   band.
 \end{itemize}
 
-The results come from a single training run per arm at a fixed seed, so they are
-exploratory. No priority or novelty claim is made, and the limitations in
+The results come from three training runs per arm, a sample too small for a
+well-powered seed-level test, so they are exploratory. No priority or novelty claim is made, and the limitations in
 Section~\ref{sec:limitations} state the scope.
 
 The chemistry here is ordinary optical and dye chemistry. The structural rules are a
@@ -162,14 +165,29 @@ generation target.
 
 \subsection{Training and evaluation}
 
-Training ran on a single Colab A100-SXM4-40GB. A short calibration workload measured
-40.5 training steps per second and 862.7 samples per second. The full run covered
-301{,}584 steps (618 epochs) per arm, reaching a final training loss of 0.605, at about
-52.5 minutes of training per arm, followed by 6.5 minutes of evaluation. There was no
-model-selection step: the final checkpoint after the fixed epoch budget is the one
-evaluated, and no checkpoint was chosen on the evaluation set. The generator was trained
-once per arm at a fixed seed. Training was not repeated across seeds, so the reported
-uncertainty is sampling uncertainty at fixed weights.
+All three seeds (0, 1 and 2) of both arms were trained and evaluated on a single
+NVIDIA RTX 3060 GPU; these runs give every primary number in this paper. Each run covered
+301{,}584 steps (618 epochs) per arm at 34.7 to 36.3 training steps per second, about 139
+to 145 minutes of training per arm, with final training losses between 0.599 and 0.628.
+Only the generator weight initialisation and the data-shuffle order change with the seed
+(the \texttt{--seed} flag seeds Python, NumPy, torch and CUDA and offsets the shuffle
+order). The surrogate model and the corpus are rebuilt deterministically from their fixed
+seeds, and the surrogate's held-out metrics are identical in every run, so all runs are
+scored by the same surrogate and any spread across seeds reflects generator training alone.
+
+For comparison, seed~0 was also trained and evaluated on a Colab NVIDIA A100-SXM4-40GB
+(40.5 training steps per second in a short calibration workload, about 52.5 minutes of
+training per arm, final training loss 0.605). That run predates the explicit seeding code:
+it used the same data-shuffle order and sampling seed as seed~0 but an unseeded weight
+initialisation, and neither platform forces deterministic cuDNN kernels. It is therefore an
+independent replicate on different hardware, not a bitwise repeat, and it is reported only
+as a reproducibility check (Section~\ref{sec:hw}).
+
+There was no model-selection step: the final checkpoint after the fixed epoch budget is the
+one evaluated, and no checkpoint was chosen on the evaluation set. Uncertainty is reported
+at two levels: a bootstrap interval within each run (sampling at fixed weights, below) and
+the mean $\pm$ sample standard deviation across the three seeds, with a paired $t$ check on
+the three per-seed steering effects.
 
 Evaluation samples a fixed count $N$ per arm. Let $f(x)$ be the surrogate-predicted
 absorption maximum in nm of a generated molecule $x$, and let the in-band indicator be
@@ -197,52 +215,60 @@ indicators with replacement to the original size, compute
 $\delta_j = \bar{I}^{\,\mathrm{steered}}_j - \bar{I}^{\,\mathrm{plain}}_j$, and take the
 $2.5$ and $97.5$ percentiles of the sorted $\{\delta_j\}$ as the interval. The resampling
 unit is the generated molecule, so the interval covers sampling variation at fixed weights
-and does not cover variation across training seeds; the latter is addressed in
-Section~\ref{sec:seeds}. Because generated molecules from one model are not fully
+and does not cover variation across training seeds; the latter is quantified by the
+spread across the three seeds (Section~\ref{sec:seeds}). Because generated molecules from one model are not fully
 independent draws, this molecule-level resampling can understate the true variance
 (Section~\ref{sec:limitations}).
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Main comparison}
+\subsection{Main comparison over three training seeds}
+\label{sec:seeds}
 
-Table~\ref{tab:main} reports both arms over 20{,}000 samples each, target band 400 to
-450~nm. Prefix steering raises the in-band fraction from 0.187 to 0.237. The difference is
-0.050 (a rise of 5.0 percentage points) with a 95\% bootstrap confidence interval of
-[0.043, 0.058], which excludes zero, and every one of the 2{,}000 resamples gave a positive
-difference. The mean predicted absorption maximum moves up by about 11~nm, from 365.7 to
-376.9~nm. The structural-screen pass rate rises from 0.964 to 0.999. Validity is 1.000 in
-both arms, uniqueness is 0.9999 and 0.9998, and novelty is 0.9989 and 0.9990.
-Figure~\ref{fig:metrics} shows the per-arm metrics and Figure~\ref{fig:ci} shows the
-in-band fraction and the bootstrap interval on the difference. This interval measures
-sampling variability at fixed model weights. It does not capture variability across
-training runs or seeds, because the generator was trained once per arm
-(Section~\ref{sec:limitations}), so the result should be read as an exploratory point
-estimate with a sampling interval and not as a seed-stable conclusion.
+Table~\ref{tab:main} reports both arms as the mean $\pm$ sample standard deviation over
+the three RTX~3060 training seeds, each evaluated on 20{,}000 samples per arm, target band
+400 to 450~nm. All values are copied from the output of \texttt{uv/aggregate\_seeds.py}
+run on the committed per-seed artifacts. Prefix steering raises the in-band fraction from
+$0.185 \pm 0.006$ to $0.252 \pm 0.004$. The per-seed steering effects are 0.066, 0.059 and
+0.078, so the effect is positive in every seed, with a mean of $0.068 \pm 0.010$ (a rise of
+about 6.8 percentage points). A paired $t$ check on the three per-seed differences gives
+$t = 11.70$ with 2 degrees of freedom (two-sided $p = 0.0072$), and the seed-level 95\%
+$t$-interval on the mean effect is [0.043, 0.092]. With only three seeds this test is badly
+underpowered and is read as a direction-and-size check, not a significance claim. Within
+each run the 95\% bootstrap interval on the effect excludes zero, and every one of the
+2{,}000 resamples is positive in every seed (Figure~\ref{fig:ci}). The mean predicted
+absorption maximum moves up by about 16~nm, from $365.6 \pm 1.8$ to $381.4 \pm 0.2$~nm. The
+structural-screen pass rate rises from $0.963 \pm 0.002$ to $0.999 \pm 0.001$. Validity is
+1.000 in every run, and uniqueness and novelty stay at or above 0.997 in both arms.
+Figure~\ref{fig:metrics} shows the per-arm metrics.
 
 \begin{table}[htbp]
 \centering
-\caption{Per-arm evaluation of the plain and steered generators, 20{,}000 samples each,
-target band 400 to 450~nm. Each value is a point estimate over that arm's samples from a
-single trained model. Absorption values are surrogate predictions, not measurements. The
-steered arm raises the structural-screen pass rate and the in-band fraction while keeping
-validity, uniqueness and novelty near-identical to the plain arm. Values are shown to four
-decimal places, and the abstract and running text round the same values to three. The
-table gives point estimates with no dispersion, and the 95\% bootstrap confidence interval
-on the steering effect is in Figure~\ref{fig:ci}.}
+\caption{Per-arm evaluation of the plain and steered generators over three training seeds
+(0, 1, 2), all trained and evaluated on an NVIDIA RTX 3060, 20{,}000 samples per arm and
+seed, target band 400 to 450~nm. Each cell is the mean $\pm$ sample standard deviation
+($n-1$ denominator) across the three seeds, copied from \texttt{uv/aggregate\_seeds.py}.
+Absorption values are surrogate predictions, not measurements. Values are shown to four
+decimal places, and the abstract and running text round the same values; the per-seed
+effects are computed from the per-seed fractions as stored to four decimals, so seed~0
+reads 0.0659 here and 0.0658 in its unrounded bootstrap point estimate.}
 \label{tab:main}
 \begin{tabular}{lcc}
 \toprule
-Metric & Plain & Steered \\
+Metric & Plain (mean $\pm$ sd) & Steered (mean $\pm$ sd) \\
 \midrule
-Validity & 1.000 & 1.000 \\
-Uniqueness & 0.9999 & 0.9998 \\
-Novelty & 0.9989 & 0.9990 \\
-Structural-screen pass rate & 0.9635 & 0.9991 \\
-In-band fraction (400--450~nm) & 0.1867 & 0.2371 \\
-Mean predicted absorption (nm) & 365.69 & 376.92 \\
-Unique valid structures & 19{,}997 & 19{,}995 \\
+Validity & $1.0000 \pm 0.0000$ & $1.0000 \pm 0.0000$ \\
+Uniqueness & $1.0000 \pm 0.0001$ & $0.9999 \pm 0.0001$ \\
+Novelty & $0.9979 \pm 0.0002$ & $0.9986 \pm 0.0003$ \\
+Structural-screen pass rate & $0.9630 \pm 0.0015$ & $0.9992 \pm 0.0005$ \\
+In-band fraction (400--450~nm) & $0.1847 \pm 0.0064$ & $0.2523 \pm 0.0037$ \\
+Mean predicted absorption (nm) & $365.64 \pm 1.81$ & $381.41 \pm 0.19$ \\
+\midrule
+\multicolumn{3}{l}{Steering effect $\delta$ (steered $-$ plain in-band fraction):} \\
+\multicolumn{3}{l}{\quad per seed (0, 1, 2): $+0.0659$, $+0.0585$, $+0.0783$; \quad mean $\pm$ sd: $0.0676 \pm 0.0100$} \\
+\multicolumn{3}{l}{\quad seed-level 95\% $t$-interval: [0.0427, 0.0924]; \quad $d_z = 6.75$} \\
+\multicolumn{3}{l}{\quad paired $t$ (df $=2$): 11.70; two-sided $p$: 0.0072 (underpowered at $n=3$)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -250,73 +276,67 @@ Unique valid structures & 19{,}997 & 19{,}995 \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/fig_metrics.pdf}
-\caption{Per-arm evaluation metrics over 20{,}000 samples each (band 400 to 450~nm). Each
-bar is a point estimate over that arm's samples from a single trained model. Validity,
-uniqueness and novelty are near-identical across arms. The steered arm raises the
-structural-screen pass rate and the in-band fraction. Metric values are unitless fractions.
-Uncertainty on the steering effect is quantified in Figure~\ref{fig:ci}.}
+\caption{Per-arm evaluation metrics, mean over the three RTX~3060 training seeds with error
+bars of one sample standard deviation, 20{,}000 samples per arm and seed (band 400 to
+450~nm). Validity, uniqueness and novelty are near-identical across arms. The steered arm
+raises the structural-screen pass rate and the in-band fraction. All metric values are
+unitless fractions. Uncertainty on the steering effect is shown in Figure~\ref{fig:ci}.}
 \label{fig:metrics}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/fig_ci.pdf}
-\caption{Steering effect on the in-band fraction. Left: the in-band fraction (unitless) for
-each arm. Right: the steered-minus-plain difference in in-band fraction with its 95\%
-bootstrap confidence interval over 2{,}000 resamples of the per-sample indicators. The
-dashed line marks zero. The interval [0.043, 0.058] excludes zero, so the sign of the
-effect is stable under resampling of the generated molecules. In the left panel the x-axis
-is the arm (plain or steered) and the y-axis is the in-band fraction (unitless). The
-right panel shows the steered-minus-plain difference with the percentile interval over 2{,}000
-resamples of the 20{,}000 per-sample indicators in each arm.}
+\caption{Steering effect (steered minus plain in-band fraction, unitless) per training run.
+The x-axis is the effect and each row is one run. The three RTX~3060 seeds show their 95\%
+percentile bootstrap interval over 2{,}000 resamples of the 20{,}000 per-sample
+indicators in each arm (sampling at fixed weights). The diamond is the mean of the three
+seeds with its seed-level 95\% $t$-interval (df $=2$). The grey square is the seed-0 replicate
+on an A100 (Section~\ref{sec:hw}), shown for comparison and not part of the mean. The
+dashed line marks zero; every interval excludes it.}
 \label{fig:ci}
 \end{figure}
 
-\subsection{Training-seed robustness}
-\label{sec:seeds}
+\subsection{Hardware reproducibility check (seed 0, A100 versus RTX 3060)}
+\label{sec:hw}
 
-The main comparison above uses one training seed per arm (seed~0). To probe how much of
-the effect is training variance rather than a stable property of the steering, both arms
-are retrained at two further seeds (seeds~1 and 2) under the identical architecture, data
-and step budget (618 epochs, 301{,}584 steps per arm), and each seed is evaluated with the
-same 20{,}000-sample protocol. Only the generator weight initialisation and the
-data-shuffle order change with the seed; the surrogate property model and the corpus are
-held fixed at their seed-0 values, so the three runs are compared under one surrogate and
-one corpus and any spread reflects generator training alone. The runner and the
-aggregation script are public (\texttt{colab\_run\_seeds.py}, \texttt{uv/aggregate\_seeds.py}).
+Table~\ref{tab:hw} compares the seed-0 run on the A100 with the seed-0 run on the RTX~3060.
+Validity, uniqueness, novelty and screen pass rate agree to within 0.0021, and the plain
+arm's in-band fraction agrees to within 0.0003. The steered arm differs more: its in-band
+fraction is 0.0152 higher on the RTX~3060, so the steering effect is 0.066 [0.058, 0.074] on
+the RTX~3060 and 0.050 [0.043, 0.058] on the A100. The two within-run intervals only touch,
+and the A100 effect lies below the range of the three RTX~3060 seeds (0.059 to 0.078). Because
+the A100 run had an unseeded weight initialisation (Section~\ref{sec:methods}), the gap mixes
+hardware and floating-point differences with ordinary initialisation variance, and this
+design cannot separate the two. The reading is that the direction of the effect reproduces
+across hardware and initialisation, while its size varies between runs by more than any
+single run's bootstrap interval shows. Across all four runs the effect ranges from 0.050 to
+0.078.
 
-Table~\ref{tab:seeds} will report the mean and sample standard deviation across the three
-seeds for each arm, together with the per-seed steering effect $\delta$ and a paired check
-on the three paired differences. With only three seeds that paired test is badly
-underpowered, so it is reported as a direction-and-size check, not a significance claim.
-
-%% TODO(multi-seed): fill Table~\ref{tab:seeds} from
-%%   python -m uv.aggregate_seeds uv/results/eval_results.json \
-%%       <drive>/ckpt-seeds/eval_seed1.json <drive>/ckpt-seeds/eval_seed2.json
-%% once the two additional A100 seeds finish. Do NOT hand-enter numbers; copy the
-%% aggregator's mean +/- sd output. Then update the abstract's "two further training
-%% seeds" sentence and the single-seed bullet in Section~\ref{sec:limitations}.
 \begin{table}[htbp]
 \centering
-\caption{Three-seed robustness (seeds 0, 1, 2), 20{,}000 samples per arm, band 400 to
-450~nm. Each cell is the mean $\pm$ sample standard deviation across the three seeds.
-\textbf{TODO: to be completed once the two additional seeds finish; values are not yet
-available and must be copied from \texttt{uv/aggregate\_seeds.py}, never hand-entered.}}
-\label{tab:seeds}
-\begin{tabular}{lcc}
+\caption{Hardware reproducibility check: seed~0 trained and evaluated on an NVIDIA A100
+(the original run) and on an NVIDIA RTX 3060, 20{,}000 samples per arm, band 400 to
+450~nm. The last column is RTX~3060 minus A100. The A100 run's weight initialisation was not
+seeded, so this is an independent replicate on different hardware rather than a bitwise
+repeat. Values are copied from \texttt{uv/compare\_runs.py}; bracketed ranges are 95\%
+bootstrap intervals over 2{,}000 resamples.}
+\label{tab:hw}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccc}
 \toprule
-Metric & Plain (mean $\pm$ sd) & Steered (mean $\pm$ sd) \\
+Metric & Arm & A100 & RTX 3060 & Difference \\
 \midrule
-Validity & TODO $\pm$ TODO & TODO $\pm$ TODO \\
-Uniqueness & TODO $\pm$ TODO & TODO $\pm$ TODO \\
-Novelty & TODO $\pm$ TODO & TODO $\pm$ TODO \\
-Structural-screen pass rate & TODO $\pm$ TODO & TODO $\pm$ TODO \\
-In-band fraction (400--450~nm) & TODO $\pm$ TODO & TODO $\pm$ TODO \\
-Mean predicted absorption (nm) & TODO $\pm$ TODO & TODO $\pm$ TODO \\
+Validity & plain / steered & 1.0000 / 1.0000 & 1.0000 / 1.0000 & $+0.0000$ / $+0.0000$ \\
+Uniqueness & plain / steered & 0.9999 / 0.9998 & 1.0000 / 0.9998 & $+0.0001$ / $+0.0000$ \\
+Novelty & plain / steered & 0.9989 / 0.9990 & 0.9981 / 0.9989 & $-0.0008$ / $-0.0001$ \\
+Screen pass rate & plain / steered & 0.9635 / 0.9991 & 0.9614 / 0.9986 & $-0.0021$ / $-0.0005$ \\
+In-band fraction & plain / steered & 0.1867 / 0.2371 & 0.1864 / 0.2523 & $-0.0003$ / $+0.0152$ \\
+Mean pred.\ abs.\ (nm) & plain / steered & 365.69 / 376.92 & 366.28 / 381.22 & $+0.59$ / $+4.30$ \\
 \midrule
-\multicolumn{3}{l}{Steering effect $\delta$ (steered $-$ plain in-band fraction):} \\
-\multicolumn{3}{l}{\quad per seed: TODO, TODO, TODO; \quad mean $\pm$ sd: TODO $\pm$ TODO} \\
-\multicolumn{3}{l}{\quad paired $t$ (df $=2$): TODO; two-sided $p$: TODO (underpowered at $n=3$)} \\
+Steering effect $\delta$ & & 0.0504 & 0.0658 & $+0.0154$ \\
+\quad 95\% bootstrap CI & & [0.0425, 0.0582] & [0.0582, 0.0738] & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -327,20 +347,24 @@ An earlier pilot on CPU used 20 epochs over a 6{,}000-molecule ZINC subset and 3
 samples per arm. There the in-band fraction was 0.244 for the plain arm and 0.257 for the
 steered arm, a gap inside sampling noise at that budget. The pilot showed the pipeline ran
 end to end and the direction was positive, but it could not separate the effect from
-noise. The full run reported above, at 20{,}000 samples per arm on the complete corpus,
-resolves a clear positive effect at fixed weights.
+noise. The full runs reported above, at 20{,}000 samples per arm on the complete corpus,
+resolve a clear positive effect in every seed.
 
 \section{Discussion}
 
-The steering effect is real and modest. The confidence interval on the difference excludes
-zero and every resample is positive, so the direction is stable under resampling of the
-generated molecules at fixed weights. At the same time the absolute in-band fraction stays
-below one quarter in the steered arm, so most samples still fall outside the band.
+The steering effect is real and modest. It is positive in all three seeds and in the
+A100 replicate, and within every run the bootstrap interval excludes zero, so the direction
+is stable both under resampling of the generated molecules and across training runs. Its
+size is less stable: the per-run effects span 0.050 to 0.078, and the cross-seed standard
+deviation (0.010) is larger than the half-width of a single run's bootstrap interval (about
+0.008), so a single training run overstates the precision of the effect size. At the same
+time the absolute in-band fraction stays near one quarter in the steered arm, so most
+samples still fall outside the band.
 Prefix-token conditioning shifts the output distribution toward the target without any
 per-sample guarantee, which matches the reported behaviour of soft conditioning relative
 to in-sampler constraint projection \cite{cardei2025cdd, christopher2025nsd}.
 
-The structural-screen pass rate moves almost to saturation (0.964 to 0.999), a larger
+The structural-screen pass rate moves almost to saturation (0.963 to 0.999), a larger
 relative change than the band effect. The clean-screen token is a near-binary signal that
 most training molecules already satisfy, so it is easier to push than a narrow numeric
 band.
@@ -356,11 +380,12 @@ Several limits bound these results.
   scored by the same surrogate, and the qualitative reading that the effect is real and
   modest rests on the bootstrap interval, but the absolute in-band fractions are model
   estimates and not physical measurements.
-  \item The headline numbers come from one training seed per arm (seed~0), so the bootstrap
-  interval captures sampling at fixed weights and not training-level variance. To address
-  this, both arms are retrained at two further seeds under the identical budget and
-  summarised in Section~\ref{sec:seeds}; until those cross-seed numbers are in, the
-  single-seed headline is exploratory and is not sold as a seed-stable result.
+  \item The headline numbers come from three training seeds per arm. That is enough to see
+  that the sign of the effect is stable and that its size varies between runs, but the
+  paired $t$ check at $n=3$ is badly underpowered and the cross-seed standard deviations are
+  themselves imprecise. The seed-0 replicate on an A100 gave a smaller effect than any
+  RTX~3060 seed (Section~\ref{sec:hw}); its unseeded initialisation means hardware and
+  initialisation effects cannot be separated here.
   \item The bootstrap resamples individual generated molecules, which are not fully
   independent draws from one model (duplicates and shared model structure induce
   correlation), so molecule-level resampling can understate the true variance. A
@@ -376,7 +401,7 @@ Several limits bound these results.
   contribution is a controlled two-arm measurement, not a claim about the best achievable
   model at a given budget.
   \item Validity is RDKit parse validity and does not imply chemical plausibility. In a
-  diagnostic export of 2{,}000 valid molecules per arm from the same trained weights, about
+  diagnostic export of 2{,}000 valid molecules per arm from the A100 seed-0 weights, about
   9\% carried radical electrons (182 of 2{,}000 in the plain arm, 192 of 2{,}000 in the
   steered arm), and some structures are chemically implausible, for example a species
   containing an \texttt{=[N+]Br} group. The headline validity of 1.000 should be read as
@@ -398,7 +423,9 @@ Several limits bound these results.
 
 \section{Future work}
 
-Natural extensions are several training seeds with a seed-level paired test, multiple
+Natural extensions are more training seeds, so the seed-level test has real power, a
+seeded and cuDNN-deterministic repeat on two GPU types to separate hardware from
+initialisation effects, multiple
 target bands across the spectrum, broadening the structural screen beyond the single
 PFAS-dominated family to multiple structural classes so the pass-rate effect is not
 driven by one pattern set, measured validation of a sampled subset in place of surrogate
@@ -409,18 +436,28 @@ the same task.
 \section*{Data and code availability}
 
 Code, training and evaluation scripts, and the evaluation result artifacts are public at
-\url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. The experiment code is
-pinned at commit \texttt{0c102b6} on \texttt{main}. The pinned software environment (Python
-3.13, RDKit 2026.9.2, and the packages listed in \texttt{requirements.txt}) is in the
-repository, so the exact result artifact and figures can be regenerated. The numbers in this paper are produced
-from the committed evaluation artifact by the figure script in \texttt{paper/figures/}. The
-public datasets used are ZINC250k \cite{sterling2015zinc15} and the UV-Vis dataset of Joung
-et al. \cite{joung2020uvvis}. All fixed random seeds are recorded in the code and not only
-in prose: the surrogate train/validation split uses scikit-learn seeds 42 and 7, the
-corpus subsample uses NumPy seed 0, and every generator run takes an explicit
-\texttt{--seed} (0 for the headline run, 1 and 2 for the additional seeds) that seeds
+\url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. The training and
+evaluation code used for every run, including the multi-seed runner, is pinned at commit
+\texttt{2b02589}; the aggregation, comparison and figure scripts are in the same
+repository. The per-seed evaluation artifacts
+of the three RTX~3060 seeds are in \nolinkurl{uv/results/seeds_rtx3060/}, their aggregate
+(\nolinkurl{uv/aggregate_seeds.py} output) in
+\nolinkurl{uv/results/aggregate_rtx3060_seeds012.json}, the A100 seed-0 artifact in
+\nolinkurl{uv/results/eval_results.json}, and the hardware comparison
+(\nolinkurl{uv/compare_runs.py} output) in
+\nolinkurl{uv/results/hw_repro_seed0_a100_vs_rtx3060.json}. The pinned software
+environment (Python 3.13, RDKit 2026.9.2, and the packages listed in
+\texttt{requirements.txt}) is in the repository. The figures are produced from these
+artifacts by the script in \nolinkurl{paper/figures/}, and every number in the tables is
+copied from the aggregation and comparison outputs. The public datasets used are ZINC250k
+\cite{sterling2015zinc15} and the UV-Vis dataset of Joung et al. \cite{joung2020uvvis}. All
+fixed random seeds are recorded in the code and not only in prose: the surrogate
+train/validation split uses scikit-learn seeds 42 and 7, the corpus subsample uses NumPy
+seed 0, and every generator run takes an explicit \texttt{--seed} (0, 1 or 2) that seeds
 Python, NumPy, torch and CUDA and the data-shuffle order, with the same seed used at
-sampling time, so each run reproduces exactly.
+sampling time. cuDNN is not forced into deterministic mode, so reruns reproduce the
+reported numbers up to GPU floating-point non-determinism and not bitwise; the A100 run
+(Section~\ref{sec:hw}) additionally predates the explicit weight-initialisation seed.
 
 \section*{Conflicts of interest}
 
