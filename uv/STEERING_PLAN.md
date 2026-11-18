@@ -208,3 +208,56 @@ the three-seed confirmation of a winner is a separate, later step and needs its 
 
 Engine script: `uv/engine/run_metasearch_pilot.sh` (refuses to start while the seed jobs are
 alive, resumable, writes only under its own directory).
+
+
+## 6. Round 2: diversity-aware REINVENT with checkpoint selection (`uv/metasearch2.py`)
+
+Pilot outcome (prior seed 1, 10,000 fresh samples at confirm): no configuration passed every
+pre-registered gate and the holdout check. `reinvent-99e794` (init plain, no duplicate bucket,
+lr 1e-4, sigma 30, soft width 25, batch 128) had surrogate in-band 0.648 and holdout 0.737 but
+uniqueness 0.773 (0.857 at 3,000 samples, so uniqueness also depends on the sample size). The
+two runs that kept uniqueness (init steered, bucket 3) exploited the surrogate: holdout 0.156
+and 0.074 against 0.558 and 0.574 on the surrogate.
+
+Round 2 keeps every gate (validity 0.95, uniqueness 0.90, novelty 0.90, rule pass 0.95,
+internal diversity 0.9 x plain, surrogate-minus-holdout gap 0.10) and searches the region around
+`reinvent-99e794` plus a random part of a wider grid. New knobs:
+
+| knob | what it does |
+|---|---|
+| `scaffold_bucket` | Bemis-Murcko scaffold memory: once a scaffold has been rewarded this many times, further molecules with it get reward 0 |
+| `bucket` | identical-molecule memory (range 0 to 3) |
+| `entropy_beta` | subtracts beta times the mean per-token entropy from the loss |
+| `ad_threshold` | damps the reward by min(1, nearest-neighbour Tanimoto to the surrogate's own training molecules / threshold) |
+| `sigma` (10 to 50) | smaller sigma anchors the agent more tightly to the prior |
+| `eval_temp` | sampling temperature at generation time |
+| `post_w` | logit blend of the trained agent with its prior, (1+w) log p_agent minus w log p_prior |
+
+Checkpoint selection: weights are saved every 50 steps, a snapshot is evaluated every 100 steps
+on 10,000 samples (the same size as the final gate, because uniqueness shrinks as the sample
+grows), and each trial is represented by its best snapshot that meets the gate floors plus a
+0.01 selection margin. Successive halving runs over 300, 600 and 1200 cumulative steps. The
+holdout predictor is logged for every snapshot but never used for ranking; it is a pass/fail
+gate on fresh samples of the top candidates. The reward is the UV surrogate only. The structural
+screen is not part of any reward.
+
+Citations added in round 2 (each checked to exist on 2026-11-18):
+
+- Blaschke, Engkvist, Bajorath, Chen. *Memory-assisted reinforcement learning for diverse
+  molecular de novo design.* J. Cheminform. 12:68 (2020), doi:10.1186/s13321-020-00473-0.
+- Bemis, Murcko. *The properties of known drugs. 1. Molecular frameworks.* J. Med. Chem.
+  39(15):2887-2893 (1996), doi:10.1021/jm9602928.
+- Renz, Van Rompaey, Wegner, Hochreiter, Klambauer. *On failure modes in molecule generation and
+  optimization.* Drug Discov. Today Technol. 32-33:55-63 (2019/2020),
+  doi:10.1016/j.ddtec.2020.09.003. (Optimised ML scoring functions recover spurious,
+  data-specific patterns; control scores detect it.)
+- Gao, Schulman, Hilton. *Scaling Laws for Reward Model Overoptimization.* ICML 2023, PMLR 202:
+  10835-10866. (Proxy overoptimisation and the effect of the KL coefficient.)
+
+Run:
+
+    python -m uv.metasearch2 --root RUN --plain PRIOR_PLAIN.pt --steered PRIOR_STEERED.pt \
+        --vocab vocab.json --corpus corpus.csv --predictor uvvis_predictor.joblib \
+        --uvvis-data uvvis_dataset.csv --n-local 40 --n-global 55 --rungs 300,600,1200
+    python -m uv.metasearch2 --mode seeds --root RUN-SEEDS --spec-json WINNER.json --steps N \
+        --seed-priors 0:p0.pt:s0.pt,1:p1.pt:s1.pt,2:p2.pt:s2.pt  (plus the shared files)

@@ -168,6 +168,16 @@ def guidance_experts(kind: str, w: float, steered, plain, vocab) -> List[Expert]
     raise ValueError(f"unknown guidance kind {kind!r}")
 
 
+def blend_experts(agent, prior, prefix: List[int], w: float) -> List[Expert]:
+    """Logit-space blend of a fine-tuned agent with the prior it started from:
+    logp = (1 + w) logp_agent - w logp_prior. w > 0 extrapolates past the agent (proxy-
+    tuning style, Liu et al. 2024); w < 0 interpolates back toward the prior, which
+    trades some in-band fraction for uniqueness and diversity. w = 0 is the agent."""
+    if w == 0:
+        return [Expert(agent, prefix, 1.0)]
+    return [Expert(agent, prefix, 1.0 + w), Expert(prior, prefix, -w)]
+
+
 @torch.no_grad()
 def sample_tokens(experts: Sequence[Expert], vocab, device, n: int, max_len: int = 120,
                   temperature: float = 1.0, seed: int = 0, mask_special: bool = False
@@ -228,9 +238,11 @@ def tokens_to_selfies(vocab, tokens: torch.Tensor, lengths: torch.Tensor) -> Lis
 
 
 def sequence_logprob(model, vocab, prefix: List[int], tokens: torch.Tensor,
-                     lengths: torch.Tensor) -> torch.Tensor:
+                     lengths: torch.Tensor, return_entropy: bool = False):
     """Sum of log p(token) over the generated tokens (EOS included), under `model`
-    conditioned on [BOS] + prefix. Differentiable w.r.t. model parameters."""
+    conditioned on [BOS] + prefix. Differentiable w.r.t. model parameters.
+    With return_entropy, also returns the mean per-token entropy (nats) of the model's
+    next-token distribution over the same positions, per sequence."""
     n, T = tokens.shape
     bos = vocab.stoi[gen_model.BOS]
     head = torch.tensor([[bos] + prefix] * n, dtype=torch.long, device=tokens.device)
@@ -242,7 +254,107 @@ def sequence_logprob(model, vocab, prefix: List[int], tokens: torch.Tensor,
     logp = torch.log_softmax(logits.float(), dim=-1)
     tok_lp = logp.gather(2, tokens.unsqueeze(2)).squeeze(2)
     mask = (torch.arange(T, device=tokens.device).unsqueeze(0) < lengths.unsqueeze(1))
-    return (tok_lp * mask).sum(dim=1)
+    total = (tok_lp * mask).sum(dim=1)
+    if not return_entropy:
+        return total
+    ent = -(logp.exp() * logp).sum(dim=2)
+    ent = (ent * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
+    return total, ent
+
+
+# ---------------------------------------------------------------------------
+# Diversity filter and applicability-domain helpers (reward shaping, UV objective only)
+# ---------------------------------------------------------------------------
+
+def murcko_scaffold(smiles: Optional[str]) -> str:
+    """Bemis-Murcko scaffold SMILES (Bemis and Murcko 1996), '' for acyclic molecules
+    or anything that does not parse."""
+    if not smiles:
+        return ""
+    from rdkit.Chem.Scaffolds import MurckoScaffold
+    try:
+        return MurckoScaffold.MurckoScaffoldSmiles(smiles=smiles) or ""
+    except Exception:
+        return ""
+
+
+def apply_diversity_filter(smiles: Sequence[Optional[str]], reward: np.ndarray,
+                           seen: Optional[Dict[str, int]], scaffolds: Optional[Dict[str, int]],
+                           bucket: int = 0, scaffold_bucket: int = 0,
+                           scaffold_fn: Callable[[Optional[str]], str] = murcko_scaffold
+                           ) -> np.ndarray:
+    """Zero the reward of repeated molecules and of over-full scaffold buckets.
+
+    Within a batch only the first copy of a SMILES earns a reward. With bucket > 0, a
+    molecule already seen `bucket` times earlier in the run earns nothing (identical
+    molecule filter). With scaffold_bucket > 0, a molecule whose Bemis-Murcko scaffold
+    has already been *rewarded* `scaffold_bucket` times earlier earns nothing, in the
+    spirit of the memory unit of Blaschke et al. 2020 (J Cheminform 12:68) and the
+    scaffold diversity filters of Thomas et al. 2022 (J Cheminform 14:68). Acyclic
+    molecules have no scaffold and are only subject to the identical-molecule rule.
+    `seen` and `scaffolds` are updated in place. Returns a new reward array.
+    """
+    reward = np.array(reward, dtype=float, copy=True)
+    first = set()
+    for i, s in enumerate(smiles):
+        if s is None:
+            reward[i] = 0.0
+            continue
+        if s in first:
+            reward[i] = 0.0
+        first.add(s)
+        if seen is not None and bucket > 0:
+            if seen.get(s, 0) >= bucket:
+                reward[i] = 0.0
+            seen[s] = seen.get(s, 0) + 1
+        if scaffolds is not None and scaffold_bucket > 0 and reward[i] > 0:
+            sc = scaffold_fn(s)
+            if sc:
+                if scaffolds.get(sc, 0) >= scaffold_bucket:
+                    reward[i] = 0.0
+                else:
+                    scaffolds[sc] = scaffolds.get(sc, 0) + 1
+    return reward
+
+
+class ApplicabilityDomain:
+    """Soft applicability-domain factor from nearest-neighbour Tanimoto similarity to the
+    molecules the UV surrogate was trained on (Morgan radius 2, 2048 bits).
+
+    factor = min(1, max_sim / threshold). It damps the reward of molecules far from the
+    surrogate's training data, where a fixed regressor is least reliable and where
+    optimisation tends to exploit it (Renz et al. 2019, Drug Discov Today Technol 32-33:55).
+    It reads only the surrogate's own training molecules, never the holdout predictor.
+    """
+
+    def __init__(self, reference_smiles: Sequence[str], threshold: float = 0.0):
+        from rdkit import Chem
+        from rdkit.Chem import rdFingerprintGenerator
+        self.threshold = float(threshold)
+        self._gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+        self._ref = []
+        for s in reference_smiles:
+            m = Chem.MolFromSmiles(s) if isinstance(s, str) else None
+            if m is not None:
+                self._ref.append(self._gen.GetFingerprint(m))
+
+    def max_similarity(self, smiles: Sequence[Optional[str]]) -> np.ndarray:
+        from rdkit import Chem, DataStructs
+        out = np.zeros(len(smiles), dtype=float)
+        for i, s in enumerate(smiles):
+            m = Chem.MolFromSmiles(s) if s else None
+            if m is None or not self._ref:
+                continue
+            out[i] = max(DataStructs.BulkTanimotoSimilarity(self._gen.GetFingerprint(m),
+                                                            self._ref))
+        return out
+
+    def factor(self, smiles: Sequence[Optional[str]],
+               threshold: Optional[float] = None) -> np.ndarray:
+        thr = self.threshold if threshold is None else float(threshold)
+        if thr <= 0:
+            return np.ones(len(smiles))
+        return np.minimum(1.0, self.max_similarity(smiles) / thr)
 
 
 # ---------------------------------------------------------------------------
@@ -257,13 +369,18 @@ class ReinventConfig:
     soft_width: float = 0.0       # nm; 0 = hard in-band indicator
     topk_frac: float = 1.0        # <1: augmented hill-climb, learn from top fraction only
     bucket: int = 0               # >0: a molecule seen this many times gets reward 0
+    scaffold_bucket: int = 0      # >0: a Murcko scaffold rewarded this many times gets reward 0
+    entropy_beta: float = 0.0     # >0: subtract beta * mean per-token entropy from the loss
+    ad_threshold: float = 0.0     # >0: applicability-domain damping (needs an AD object)
     max_len: int = 120
     grad_clip: float = 1.0
 
 
 def reinvent_step(agent, prior, vocab, device, prefix: List[int], scorer: UVScorer,
                   band: Tuple[float, float], cfg: ReinventConfig, opt, seed: int,
-                  seen: Optional[Dict[str, int]] = None) -> dict:
+                  seen: Optional[Dict[str, int]] = None,
+                  scaffolds: Optional[Dict[str, int]] = None,
+                  ad: Optional["ApplicabilityDomain"] = None) -> dict:
     """One REINVENT update. Returns a dict of batch statistics (floats)."""
     agent.eval()   # sampling without dropout noise; the loss pass below is in train mode
     tokens, lengths = sample_tokens([Expert(agent, prefix, 1.0)], vocab, device,
@@ -272,26 +389,21 @@ def reinvent_step(agent, prior, vocab, device, prefix: List[int], scorer: UVScor
     smiles = [selfies_to_smiles(s) for s in selfies_list]
     pred = scorer.predict(smiles)
     reward = band_reward(pred, band[0], band[1], cfg.soft_width)
-    # Within-batch duplicates earn nothing beyond the first copy; across history a
-    # molecule seen `bucket` times is no longer rewarded (identical-molecule filter).
-    first = set()
-    for i, s in enumerate(smiles):
-        if s is None:
-            reward[i] = 0.0
-            continue
-        if s in first:
-            reward[i] = 0.0
-        first.add(s)
-        if seen is not None and cfg.bucket > 0:
-            if seen.get(s, 0) >= cfg.bucket:
-                reward[i] = 0.0
-            seen[s] = seen.get(s, 0) + 1
+    # Duplicate and scaffold-bucket filter (reward shaping only; see apply_diversity_filter).
+    reward = apply_diversity_filter(smiles, reward, seen, scaffolds, cfg.bucket,
+                                    cfg.scaffold_bucket)
+    if ad is not None and cfg.ad_threshold > 0:
+        reward = reward * ad.factor(smiles, cfg.ad_threshold)
     score = torch.tensor(2.0 * reward - 1.0, dtype=torch.float32, device=device)
 
     agent.train()
     with torch.no_grad():
         prior_lp = sequence_logprob(prior, vocab, prefix, tokens, lengths)
-    agent_lp = sequence_logprob(agent, vocab, prefix, tokens, lengths)
+    if cfg.entropy_beta > 0:
+        agent_lp, ent = sequence_logprob(agent, vocab, prefix, tokens, lengths,
+                                         return_entropy=True)
+    else:
+        agent_lp, ent = sequence_logprob(agent, vocab, prefix, tokens, lengths), None
     aug = prior_lp + cfg.sigma * score
     per = (aug - agent_lp) ** 2
     if cfg.topk_frac < 1.0:
@@ -299,6 +411,8 @@ def reinvent_step(agent, prior, vocab, device, prefix: List[int], scorer: UVScor
         order = torch.argsort(score + 1e-3 * (aug - agent_lp).detach(), descending=True)[:k]
         per = per[order]
     loss = per.mean()
+    if ent is not None:
+        loss = loss - cfg.entropy_beta * ent.mean()
     opt.zero_grad()
     loss.backward()
     torch.nn.utils.clip_grad_norm_(agent.parameters(), cfg.grad_clip)
