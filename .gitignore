@@ -8,3 +8,10 @@ cache/*.tmp
 
 # Local/CI download cache for the smoke-run source CSVs.
 .ci-cache/
+
+# MkDocs and CI scratch output
+site/
+uv-requirements-no-torch.txt
+uv/data/*_smoke.csv
+uv/artifacts/*smoke*
+.venv/

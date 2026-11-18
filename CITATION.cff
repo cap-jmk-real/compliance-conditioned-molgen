@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it using the metadata in this file."
+title: "compliance-conditioned-molgen: structure-resolution coverage of EU chemical inventory lists and UV-Vis steered molecular generation"
+type: software
+authors:
+  - family-names: Kleber
+    given-names: Julian M.
+    orcid: "https://orcid.org/0000-0001-5518-0932"
+    email: julian.m.kleber@gmail.com
+    affiliation: Independent Researcher
+repository-code: "https://github.com/cap-jmk-real/compliance-conditioned-molgen"
