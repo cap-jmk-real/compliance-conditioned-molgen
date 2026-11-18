@@ -1,0 +1,47 @@
+holdout predictor: {'model': 'morgan_count_r3_1024+maccs+conj_descriptors_extratrees', 'seed': 1337, 'n_train': 5782, 'n_test': 643, 'mae_nm': 18.50082810447883, 'rmse_nm': 28.394024974112718, 'r2': 0.9280174235704403, 'note': 'same chromophore database as the surrogate; different features, learner, seed and split'}
+device=cpu band=(400.0, 450.0) corpus=249455
+meta-search: 9 candidate trials + 2 anchors, rungs [(10, 300), (30, 500)], eta 2.0
+
+=== rung0: steps 10, n_eval 300, 9 trials (+anchors) ===
+  [rung0 1/11] plain-7d8b64       in-band 0.227 valid 1.000 uniq 1.000 div 0.886 rule 0.943 (elapsed 0.0 min)
+  [rung0 2/11] prefix-fbc1c7      in-band 0.240 valid 1.000 uniq 1.000 div 0.887 rule 0.997 (elapsed 0.0 min)
+  [rung0 3/11] guidance-7d16f4    in-band 0.243 valid 1.000 uniq 1.000 div 0.890 rule 1.000 (elapsed 0.0 min)
+  [rung0 4/11] guidance-23286f    in-band 0.260 valid 1.000 uniq 0.910 div 0.878 rule 1.000 (elapsed 0.1 min)
+  [rung0 5/11] guidance-f29160    in-band 0.000 valid 1.000 uniq 0.010 div 0.854 rule 1.000 (elapsed 0.1 min)
+  [rung0 6/11] guidance-ecb358    in-band 0.230 valid 1.000 uniq 0.900 div 0.893 rule 1.000 (elapsed 0.1 min)
+    [reinvent-9020ab] step 10/10 | 1.90 steps/s | in-band batch 0.234 | unique 1.000 | kl 2.35 | loss 139.72
+  [rung0 7/11] reinvent-9020ab    in-band 0.260 valid 1.000 uniq 1.000 div 0.890 rule 1.000 (elapsed 0.2 min)
+    [reinvent-6313d7] step 10/10 | 1.00 steps/s | in-band batch 0.320 | unique 1.000 | kl 1.36 | loss 76.19
+  [rung0 8/11] reinvent-6313d7    in-band 0.297 valid 1.000 uniq 1.000 div 0.883 rule 0.977 (elapsed 0.4 min)
+    [reinvent-99e794] step 10/10 | 0.96 steps/s | in-band batch 0.242 | unique 1.000 | kl 0.66 | loss 690.23
+  [rung0 9/11] reinvent-99e794    in-band 0.273 valid 1.000 uniq 1.000 div 0.885 rule 0.960 (elapsed 0.6 min)
+    [selftrain-91b363] round 1 step 10/10 | 2.95 steps/s | kept 189/1000 | pool 189 | loss 0.627
+  [rung0 10/11] selftrain-91b363   in-band 0.193 valid 1.000 uniq 1.000 div 0.888 rule 0.963 (elapsed 0.7 min)
+    [selftrain-639dcd] round 1 step 10/10 | 1.63 steps/s | kept 481/2000 | pool 481 | loss 0.650
+  [rung0 11/11] selftrain-639dcd   in-band 0.253 valid 1.000 uniq 1.000 div 0.890 rule 0.997 (elapsed 0.8 min)
+  gate: kept 5/9 (8 feasible): reinvent-6313d7, reinvent-99e794, guidance-23286f, reinvent-9020ab, selftrain-639dcd
+
+=== rung1: steps 30, n_eval 500, 5 trials (+anchors) ===
+  [rung1 1/7] plain-7d8b64       in-band 0.208 valid 1.000 uniq 1.000 div 0.886 rule 0.960 (elapsed 0.8 min)
+  [rung1 2/7] prefix-fbc1c7      in-band 0.264 valid 1.000 uniq 1.000 div 0.883 rule 1.000 (elapsed 0.8 min)
+    [reinvent-6313d7] step 20/30 | 1.04 steps/s | in-band batch 0.312 | unique 1.000 | kl 2.97 | loss 76.70
+    [reinvent-6313d7] step 30/30 | 0.95 steps/s | in-band batch 0.352 | unique 1.000 | kl 2.79 | loss 94.02
+  [rung1 3/7] reinvent-6313d7    in-band 0.322 valid 1.000 uniq 1.000 div 0.882 rule 0.972 (elapsed 1.2 min)
+    [reinvent-99e794] step 20/30 | 1.16 steps/s | in-band batch 0.289 | unique 1.000 | kl 1.43 | loss 657.89
+    [reinvent-99e794] step 30/30 | 0.77 steps/s | in-band batch 0.227 | unique 1.000 | kl 2.11 | loss 649.26
+  [rung1 4/7] reinvent-99e794    in-band 0.270 valid 1.000 uniq 1.000 div 0.881 rule 0.966 (elapsed 1.7 min)
+  [rung1 5/7] guidance-23286f    in-band 0.239 valid 1.000 uniq 0.886 div 0.885 rule 0.993 (elapsed 1.7 min)
+    [reinvent-9020ab] step 20/30 | 2.87 steps/s | in-band batch 0.219 | unique 1.000 | kl 1.53 | loss 120.83
+    [reinvent-9020ab] step 30/30 | 3.02 steps/s | in-band batch 0.297 | unique 1.000 | kl 1.52 | loss 114.51
+  [rung1 6/7] reinvent-9020ab    in-band 0.302 valid 1.000 uniq 1.000 div 0.884 rule 1.000 (elapsed 1.9 min)
+    [selftrain-639dcd] round 2 step 30/30 | 3.72 steps/s | kept 555/2000 | pool 1036 | loss 0.626
+  [rung1 7/7] selftrain-639dcd   in-band 0.300 valid 1.000 uniq 1.000 div 0.887 rule 1.000 (elapsed 2.0 min)
+  gate: kept 2/5 (4 feasible): reinvent-6313d7, reinvent-9020ab
+
+=== confirm: 2 survivors, n_eval 1000, fresh seed ===
+  [confirm] plain-7d8b64       in-band 0.208 holdout 0.182 div 0.885
+  [confirm] prefix-fbc1c7      in-band 0.269 holdout 0.225 div 0.886
+  [confirm] reinvent-6313d7    in-band 0.312 holdout 0.369 div 0.885
+  [confirm] reinvent-9020ab    in-band 0.281 holdout 0.238 div 0.884
+
+done in 2.2 min. results: /tmp/ms-smoke/results.md

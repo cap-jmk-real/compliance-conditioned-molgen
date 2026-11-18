@@ -1,0 +1,26 @@
+{
+  "device": "cpu",
+  "timings_s": {
+    "reinvent_step_s_b64": 0.7874,
+    "reinvent_step_s_b128": 0.7811,
+    "reinvent_step_s": 0.7843,
+    "selftrain_round_s": 6.629,
+    "selftrain_step_s": 0.2652,
+    "eval_s_per_1000": 3.2939
+  },
+  "counts": {
+    "guidance": 16,
+    "reinvent": 24,
+    "selftrain": 12
+  },
+  "rungs": "100:1000,300:2000,900:3000",
+  "projection": {
+    "candidates_per_rung": [
+      52,
+      18,
+      3
+    ],
+    "central_hours": 1.3914512949621578,
+    "upper_hours": 2.45470892155612
+  }
+}
