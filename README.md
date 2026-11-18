@@ -92,4 +92,4 @@ Cite with the metadata in [CITATION.cff](CITATION.cff). Author: Julian M. Kleber
 
 ## Licence
 
-This repository has no licence file yet, so no licence is granted. Data licences are listed in [DATA.md](DATA.md) and `uv/README.md`.
+The source code is licensed under the MIT licence, see [LICENSE](LICENSE). The manuscript text and figures of the accompanying paper are CC BY 4.0, see [LICENSE-text](LICENSE-text). Data licences are listed in [DATA.md](DATA.md) and `uv/README.md`.

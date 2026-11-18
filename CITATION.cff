@@ -8,4 +8,5 @@ authors:
     orcid: "https://orcid.org/0000-0001-5518-0932"
     email: julian.m.kleber@gmail.com
     affiliation: Independent Researcher
+license: MIT
 repository-code: "https://github.com/cap-jmk-real/compliance-conditioned-molgen"

@@ -18,4 +18,6 @@ Parsed tables in `data/`, the PubChem response cache, the cleaned UV-Vis dataset
 
 ## Licence
 
-The repository has no licence file yet, so no licence is granted. Third-party data keep their own terms.
+- Source code (scripts and tools): MIT, see `LICENSE`.
+- Manuscript text and figures of the accompanying paper: CC BY 4.0, see `LICENSE-text`.
+- Third-party data keep their own terms (see `DATA.md`).
