@@ -1,18 +1,48 @@
-# Track 25: structure-resolution coverage of EU chemical inventory lists
+# compliance-conditioned-molgen
 
-This folder measures how many entries of three EU chemical lists can be written as one machine-readable structure. It is the first milestone of track 25 (compliance-conditioned molecular generation, plan in `docs/25-compliance-conditioned-molecular-generation.md`). There is no model and no training here. Everything runs on CPU.
+Research track 25 of Julian M. Kleber: how far can EU chemical-inventory lists be written as machine-readable structures, and can a small molecular language model be steered toward an optical property while passing a structural-pattern screen.
 
-Lists measured:
+[![CI](https://github.com/cap-jmk-real/compliance-conditioned-molgen/actions/workflows/ci.yml/badge.svg)](https://github.com/cap-jmk-real/compliance-conditioned-molgen/actions/workflows/ci.yml)
 
-- ECHA Candidate List of substances of very high concern (253 entries)
-- REACH Annex XIV, the authorisation list (59 entries)
-- REACH Annex XVII, the restriction list (79 entries), plus Appendices 1, 2, 4, 5 and 6 of Annex XVII (1,612 CMR index entries that entries 28 to 30 refer to)
+## What this is
 
-Structures come from PubChem, looked up by CAS number and separately by name, with InChIKey as the key. Sources, dates, terms and the one gap (the EC inventory bulk file) are in `DATA.md`.
+Two parts share one repository.
 
-## Result in short
+1. Coverage measurement (repository root). Three EU lists are resolved to structures through PubChem: the ECHA Candidate List of substances of very high concern, the REACH Annex XIV authorisation list and the REACH Annex XVII restriction list, plus Appendices 1, 2, 4, 5 and 6 of Annex XVII. The scripts count how many entries can be written as one structure and how many group entries a SMARTS rule could express. Everything runs on CPU from committed tables and a committed PubChem cache.
+2. UV-Vis steered generation (`uv/`). A small SELFIES language model is steered toward a target UV-Vis absorption band (400 to 450 nm) and compared with an identical unsteered model. The structural-pattern rules are a screening metric only.
 
-Share of entries that resolve to one single-component organic structure, with no disagreement between the CAS and name lookups:
+Safety scope. This is ordinary optical chemistry on dyes and materials. Controlled substances and drug precursors are a blocklist only. They are never a conditioning target and never a reward. The repository contains no synthesis routes, no retrosynthesis and no hazardous or controlled structures, and the documentation does not add any.
+
+A map of the repository is in [docs/layout.md](docs/layout.md). The documentation site is built with MkDocs Material from `docs/` and `mkdocs.yml`.
+
+## Quickstart
+
+Python 3.13. The root `requirements.txt` is pinned to versions with 3.13 wheels. This installs the CPU build of PyTorch and runs the unit tests.
+
+<!-- ci:run -->
+```bash
+python3.13 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+grep -vE '^torch([[:space:]]|$)' uv/requirements.txt > uv-requirements-no-torch.txt
+pip install -r uv-requirements-no-torch.txt
+python -m pytest tests
+```
+
+## Reproducing the coverage numbers
+
+The parsed tables in `data/` and the PubChem cache in `cache/` are committed, so no network is needed. The three scripts rewrite `COVERAGE.md` and the CSV files with identical content, which `git diff` confirms.
+
+<!-- ci:run -->
+```bash
+python resolve_pubchem.py
+python classify_coverage.py
+python smarts_feasibility.py
+git diff --exit-code COVERAGE.md data
+```
+
+The result, as written in `COVERAGE.md`:
 
 | List | Entries | Usable single structures | Of those, confirmed by CAS and name |
 |---|---|---|---|
@@ -21,50 +51,45 @@ Share of entries that resolve to one single-component organic structure, with no
 | Annex XVII | 79 | 28 (35%) | 25 (32%) |
 | Annex XVII appendices 1 to 6 | 1,612 | 282 (17%) | 229 (14%) |
 
-After removing duplicates across lists, that is 313 distinct usable structures, 271 of them confirmed by both lookups. Every Annex XVII entry is conditional on use, concentration or product type, so for that list a structure says which family a molecule belongs to and never whether the restriction applies. Full tables: `COVERAGE.md`. SMARTS analysis of the group entries: `SMARTS.md`.
+"Usable" means one single-component organic structure with common elements and no disagreement between the CAS and the name lookup. After removing duplicates across lists there are 313 distinct usable structures, 271 of them confirmed by both lookups. Every Annex XVII entry is conditional on use, concentration or product type, so for that list a structure says which family a molecule belongs to and never whether a restriction applies. The SMARTS analysis of group entries is in `SMARTS.md`.
 
-## Run it
+Re-fetching the sources (`ingest_echa.py`, `ingest_eurlex.py`, `ingest_ec_inventory.py`, then `parse_lists.py` and `parse_eurlex.py`) needs a display and a Chrome binary at `/usr/bin/google-chrome` for the ECHA pages. See `DATA.md` for why. Raw downloads go to `raw/` and are not committed.
 
+## UV-Vis smoke run and full run
+
+| Run | Command | Checks | Needs |
+|---|---|---|---|
+| Unit tests | `python -m pytest tests` | Steering methods, meta-search driver and SMARTS rules on small fixtures. No paper numbers. | CPU |
+| Smoke | `python uv/run.py --smoke ...` | The whole pipeline end to end on a few hundred molecules and one epoch: dataset, predictor, corpus, both generator arms, evaluation. Writes `uv/artifacts/eval_smoke.json`. It checks that the pipeline runs and produces the expected files. It does not reproduce paper numbers. | CPU, two source CSVs |
+| Full | `python -m uv.run --ckpt-root ... --pred-trees 600 --corpus-n 20000 --gen-epochs 20 --n-samples 5000` (Colab A100 recipe in `uv/README.md`) | Produces the numbers in `uv/RESULTS.md`. | GPU |
+
+The smoke run needs two source CSVs in `.ci-cache/`. The ZINC250k file is downloaded below. The UV-Vis file is Joung et al. 2020, rev02, figshare item 12045567 (CC BY 4.0), saved as `.ci-cache/chromophore_rev02.csv`. The GitHub mirror that `uv/prepare_uvvis.py` used as its fallback (`howardwang1997/AI4PS`) returned HTTP 404 on 2026-11-18, and the figshare download host returned 403 from the machine used to write this. In CI the file comes from the Actions cache that `ci.yml` also uses.
+
+<!-- ci:run -->
+```bash
+mkdir -p .ci-cache
+test -s .ci-cache/zinc250k.csv || curl -fL --retry 5 --retry-delay 5 --retry-all-errors -o .ci-cache/zinc250k.csv "https://raw.githubusercontent.com/aspuru-guzik-group/chemical_vae/master/models/zinc_properties/250k_rndm_zinc_drugs_clean_3.csv"
+test -s .ci-cache/chromophore_rev02.csv || { echo "missing .ci-cache/chromophore_rev02.csv, see README" >&2; exit 1; }
+python uv/run.py --smoke --ckpt-root /tmp/t25-ckpt --uvvis-local .ci-cache/chromophore_rev02.csv --zinc-local .ci-cache/zinc250k.csv
+test -s uv/artifacts/eval_smoke.json
 ```
-python3.13 -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
-DISPLAY=:0 python ingest_echa.py      # headed Chrome, see DATA.md for why
-python ingest_eurlex.py
-DISPLAY=:0 python ingest_ec_inventory.py   # records the gap if the file is still missing
-python parse_lists.py
-python parse_eurlex.py
-python resolve_pubchem.py            # offline from cache/pubchem_cache.json.gz
-python classify_coverage.py          # writes data/entry_classification.csv and COVERAGE.md
-python smarts_feasibility.py         # writes data/group_smarts_feasibility.csv
-python -m pytest tests
-```
 
-The ECHA scripts need a display and a Chrome binary at `/usr/bin/google-chrome`. Raw downloads go to `raw/` and are not committed. A fresh checkout can skip the ingestion and parsing steps because the parsed tables in `data/` and the PubChem cache are committed.
+Results on file. `uv/RESULTS.md` records a CPU validation run of 2026-11-16: predictor test MAE 24.04 nm and R2 0.873, and an in-band fraction (400 to 450 nm) of 0.244 for the plain arm and 0.257 for the steered arm at 3,000 samples per arm. The file calls this a smoke-scale check, with a difference within sampling noise. Stronger steering methods and a successive-halving meta-search are in `uv/steering.py` and `uv/metasearch.py`, with the plan in `uv/STEERING_PLAN.md`.
 
-## Files
-
-| File | Purpose |
-|---|---|
-| `ingest_echa.py`, `ingest_eurlex.py`, `ingest_ec_inventory.py` | fetch and cache the sources, write `raw/fetch_meta.json` |
-| `parse_lists.py`, `parse_eurlex.py` | turn cached pages into `data/*.csv` |
-| `resolve_pubchem.py` | CAS and name lookups in PubChem, cached |
-| `classify_coverage.py` | one structural class per entry, usability flags, `COVERAGE.md` |
-| `smarts_feasibility.py` | which non-single entries a SMARTS rule could express |
-| `smarts_rules.py`, `tests/test_smarts_rules.py` | five worked SMARTS rules with match and non-match tests |
-| `DATA.md`, `COVERAGE.md`, `SMARTS.md` | sources, measured coverage, SMARTS analysis |
+Every command in a code block marked for CI in this README and in `docs/reproduce.md` is executed by `tools/run_readme_blocks.py` in the `docs-sbom` workflow, so the documented commands cannot drift from what CI runs.
 
 ## Limits
 
-- The structural classes for groups and variable-composition substances come from keyword rules on entry names. I read every non-single entry of the three main lists. For the appendices I read a sample.
-- PubChem can map a CAS number to a wrong or arbitrary record. The cross-check against the name lookup and an element check catch some of this. Entries confirmed by only one lookup carry more risk.
-- Hydrates and anhydrous forms of one substance count as several structures here.
-- This is a measurement of the lists as published on 16 Nov 2026. It is not legal advice and does not decide whether any use of a substance is permitted.
+- Structural classes for groups and variable-composition substances come from keyword rules on entry names. Every non-single entry of the three main lists was read. For the appendices a sample was read.
+- PubChem can map a CAS number to a wrong or arbitrary record. The cross-check against the name lookup and an element check catch some of this.
+- Hydrates and anhydrous forms of one substance count as several structures.
+- The coverage is a measurement of the lists as published on 16 Nov 2026. It is not legal advice and does not decide whether any use of a substance is permitted.
+- UV-Vis absorption of generated molecules is a surrogate prediction, not a measurement.
 
-## UV-Vis steered generation (step 2 of the track)
+## Citation
 
-The `uv/` folder adds a small, runnable experiment: steer a SELFIES molecular language
-model toward a target UV-Vis absorption band while passing the structural-pattern screen
-in `smarts_rules.py`, compared with an identical unsteered model. It is ordinary dye and
-materials optics. No synthesis, reactions, routes or toxicology. The SMARTS rules are a
-screening metric only, never a target or a reward. See `uv/README.md` for the Colab A100
-recipe and `uv/RESULTS.md` for the measured validation result.
+Cite with the metadata in [CITATION.cff](CITATION.cff). Author: Julian M. Kleber, ORCID [0000-0001-5518-0932](https://orcid.org/0000-0001-5518-0932). Contact: julian.m.kleber@gmail.com.
+
+## Licence
+
+The source code is licensed under the MIT licence, see [LICENSE](LICENSE). The manuscript text and figures of the accompanying paper are CC BY 4.0, see [LICENSE-text](LICENSE-text). Data licences are listed in [DATA.md](DATA.md) and `uv/README.md`.
