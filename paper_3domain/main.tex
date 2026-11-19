@@ -33,31 +33,29 @@ and Central Nervous System Targets with Graph Neural Network Ensembles}}
 \begin{abstract}
 \noindent
 Generative molecular design usually optimises one objective and checks regulatory limits
-only after sampling. We evaluate a compliance-conditioned pipeline combining SELFIES and
-P-SMILES GRUs, REINVENT fine-tuning, explicit substructure screens (REACH Annex~XIV/XVII,
-PFAS, ortho-phthalates, organotin, bisphenol-A, PAINS), and four-architecture 2D graph
-neural network (GNN) ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
-\texttt{CARATE}). Every run is evaluated on an independent ExtraTrees holdout excluded
-from training rewards across three domains on one RTX~3060 GPU. For UV-Vis chromophores
-(400--450~nm, ZINC250k), the 4-GNN ensemble reaches 17.48~nm MAE ($R^2=0.922$ vs.\
-24.00~nm for Morgan-HGB). Combining 4-GNN and Morgan rewards in REINVENT lifts in-band yield over 3 seeds from
-$0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$ (4-GNN) and $0.702 \pm 0.025$
+after sampling. We evaluate a compliance-conditioned pipeline combining SELFIES and
+P-SMILES GRUs, REINVENT fine-tuning, explicit SMARTS screens (REACH Annex~XIV/XVII, PFAS,
+ortho-phthalates, organotin, bisphenol-A, PAINS), and four-architecture 2D GNN ensembles
+(\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, \texttt{CARATE}). Every run is audited by
+an independent ExtraTrees holdout excluded from training rewards across three domains on
+one RTX~3060 GPU. For UV-Vis chromophores (400--450~nm, ZINC250k), the 4-GNN ensemble
+reaches 17.48~nm MAE ($R^2=0.922$ vs.\ 24.00~nm Morgan-HGB), and 4-GNN+Morgan REINVENT
+lifts 3-seed in-band yield from $0.186$ to $0.720 \pm 0.037$ (4-GNN) and $0.702 \pm 0.025$
 (holdout) at $0.950$ uniqueness and $0.983$ rule pass. For engineering polymers ($T_g$
-450--550~K, 7{,}367 CC-BY-4.0 P-SMILES), the 4-GNN ensemble reaches 20.96~K MAE
-($R^2=0.922$ vs.\ 31.36~K for ExtraTrees). Compliance-gated REINVENT raises REACH/BPA-free
-compliance from $0.893$ to $0.9997$, validity from $0.717$ to $0.967$, and in-band yield
-from $0.201$ to $0.807$ (4-GNN) and $0.522$ (holdout) at $0.926$ uniqueness and $0.991$
-novelty. For non-hallucinogenic central nervous system (CNS) ligands (ChEMBL~37, high
-\texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}), GNN ensembles achieve higher
-held-out $R^2$ than ExtraTrees on all three targets ($R^2=0.687, 0.460, 0.617$ vs.\
-$0.350, 0.094, 0.286$). Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from
-$0.001$ to $0.348$ but degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG}
-($0.859 \to 0.610$) safety. Multi-objective safety REINVENT restores \texttt{5-HT2B}
-($0.551$), \texttt{hERG} ($0.959$), CNS-BBB ($0.982$, QED $0.789$), and REACH/PAINS
-($0.998$) at $0.266$ uniqueness. Adding Bemis--Murcko scaffold diversity memory restores
-uniqueness to $0.994$ (internal diversity $0.852$) while raising \texttt{5-HT1A} to $0.445$
-and joint all-criteria yield to $0.0243$ (GNN) and $0.0497$ (holdout). All values are
-surrogate predictions.\footnote{The author
+450--550~K, 7{,}367 P-SMILES), 4-GNN reaches 20.96~K MAE ($R^2=0.922$ vs.\ 31.36~K
+ExtraTrees), while compliance-gated REINVENT lifts REACH/BPA compliance to $0.9997$,
+validity to $0.967$, and in-band yield to $0.807$ (4-GNN) and $0.522$ (holdout) at $0.926$
+uniqueness. For non-hallucinogenic central nervous system (CNS) ligands (ChEMBL~37,
+\texttt{5-HT1A} vs.\ \texttt{5-HT2B} and \texttt{hERG}), GNN ensembles achieve higher
+held-out $R^2$ than ExtraTrees ($0.687, 0.460, 0.617$ vs.\ $0.350, 0.094, 0.286$).
+Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) to $0.348$ but degrades
+\texttt{5-HT2B} ($0.177$) and \texttt{hERG} ($0.610$) safety. Multi-objective safety
+REINVENT with Bemis--Murcko scaffold memory restores uniqueness to $0.994$ (diversity
+$0.852$) while raising \texttt{5-HT1A} to $0.445$ and joint yield to $0.0243$ (GNN) and
+$0.0497$ (holdout). Retrosynthetic audits confirm high SA-Score ($\le 4.0$) and BRICS
+decomposability ($98.8\%$, $100\%$, and $70.0\%$ SA pass). Gas-phase TD-DFT
+(DF-B3LYP/6-31G) on 50 UV-Vis candidates yields 46 converged structures ($399.4$~nm median
+$S_1$, $65.2\%$ visible, six bright hits with $f \ge 0.05$ in $380$--$470$~nm).\footnote{The author
 used AI coding, research and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity
 and SciSpace) to write code, run experiments, search and read literature, and draft and edit
 text. The research questions, study design and conclusions are the author's. The author
@@ -302,6 +300,62 @@ Safety-REINVENT (no scaf.\ mem.) & 0.421 / \textbf{0.912} & \textbf{0.551} & \te
 }
 \end{table}
 
+\subsection{Retrosynthetic accessibility and ab-initio TD-DFT audit}
+To assess synthetic tractability beyond string validity, we evaluate Ertl--Schuffenhauer
+synthetic accessibility (SA-Score) and RDKit BRICS retrosynthetic disconnection across all
+three domains (Table~\ref{tab:retro} and Figure~\ref{fig:dft_retro}B). Generated UV-Vis
+chromophores ($n=592$) average SA-Score $2.92 \pm 0.32$ ($98.8\%$ with $\mathrm{SA} \le 4.0$,
+$99.3\%$ BRICS-decomposable, $0.04$ stereocentres). Methyl-capped top compliant polymer
+repeating units ($n=50$) average SA-Score $2.48 \pm 0.38$ ($100\% \le 4.0$, $98.0\%$
+BRICS-decomposable). Top dual-predictor CNS consensus ligands ($n=10$) average SA-Score
+$3.71 \pm 0.53$ ($70.0\% \le 4.0$, $80.0\% \le 4.5$, $100\%$ BRICS-decomposable).
+
+To audit surrogate predictions against first-principles quantum chemistry, we sampled 50
+novel REACH-compliant UV-Vis consensus candidates ($\le 30$ heavy atoms, all
+$\mathrm{SA} \le 4.0$), generated ETKDGv3/MMFF94 3D conformers, and ran gas-phase
+density-fitted TDA-DFT (DF-B3LYP/6-31G, three singlet states) in PySCF
+(Figure~\ref{fig:dft_retro}A). All 46 neutral 6-31G-supported structures converged
+($92\%$ overall, with three brominated molecules and one carboxylate anion excluded by basis
+and charge defaults). Converged candidates exhibit mean HOMO--LUMO gap $3.36 \pm 0.61$~eV,
+mean $S_1 = 446.7$~nm, and median $S_1 = 399.4$~nm. Overall, $30/46$ ($65.2\%$) absorb in
+the visible ($\ge 380$~nm), $16/46$ ($34.8\%$) fall within $380$--$470$~nm, and $29/46$
+($63.0\%$) show bright transitions ($f \ge 0.05$). Six candidates are directly confirmed as bright ab-initio hits inside $380$--$470$~nm
+($f = 0.067$--$0.187$, $\mathrm{SA} = 2.75$--$3.26$), including a nitro-fulvene urea at
+$S_1 = 399.3$~nm ($f=0.187$) and a biphenyl-hydrazone chromophore at $S_1 = 449.1$~nm
+($f=0.101$). At the same time, the $83.9$~nm MAE between 4-GNN and gas-phase $S_1$
+(including dark $n \to \pi^*$ states) quantifies the residual surrogate-to-quantum gap and
+motivates pairing fast surrogate RL with TD-DFT post-filtering.
+
+\begin{table}[t]
+\centering
+\caption{Retrosynthetic accessibility audit across all three domains (Ertl--Schuffenhauer SA-Score and RDKit BRICS disconnection).}
+\label{tab:retro}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Domain / Candidate pool & $N$ & SA-Score (mean $\pm$ SD) & $\mathrm{SA} \le 4.0$ & BRICS decomp. & Mean frags & Mean chiral \\
+\midrule
+UV-Vis (all REACH-compliant) & 592 & $2.92 \pm 0.32$ & 0.988 & 0.993 & 5.45 & 0.04 \\
+UV-Vis (TD-DFT audit pool) & 50 & $2.90 \pm 0.17$ & 1.000 & 0.960 & 5.26 & 0.00 \\
+Plastics (top compliant, Me-capped) & 50 & $2.48 \pm 0.38$ & 1.000 & 0.980 & 5.66 & 0.02 \\
+CNS Pharma (top consensus v3) & 10 & $3.71 \pm 0.53$ & 0.700 & 1.000 & 4.70 & 1.50 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_dft_retrosynth.pdf}
+\caption{Post-generation physical and synthetic audits. (A)~Gas-phase \texttt{DF-B3LYP/6-31G}
+TDA-DFT brightest vertical excitation versus oscillator strength across 46 converged UV-Vis
+candidates (median $S_1 = 399.4$~nm, six confirmed bright hits with $f \ge 0.05$ inside
+380--470~nm). (B)~SA-Score ($\le 4.0$) and BRICS retrosynthetic disconnection pass rates
+across all three domains (Table~\ref{tab:retro}).}
+\label{fig:dft_retro}
+\end{figure}
+
 \section{Discussion and Limitations}
 
 Three consistent findings emerge across optical, polymer, and CNS design (Tables~\ref{tab:predictors}--\ref{tab:pharma}).
@@ -318,13 +372,15 @@ all-criteria yield ($0.0243$ GNN, $0.0497$ holdout) and high uniqueness ($0.994$
 
 Three genuine scope boundaries remain:
 \begin{itemize}
-  \item \textbf{Surrogate scores vs.\ wet-lab measurements.} All optical, thermal, and
-  binding values are predicted by trained surrogates rather than measured experimentally.
+  \item \textbf{Computational audits vs.\ wet-lab measurements.} Property predictions rely
+  on trained surrogates and gas-phase TD-DFT rather than experimental spectroscopy, DSC, or
+  binding assays.
   \item \textbf{Pattern screens vs.\ legal/toxicological clearance.} SMARTS filters capture
   known regulated chemical families and PAINS alerts, not formal regulatory or clinical
   safety approval.
-  \item \textbf{Parse validity vs.\ synthesisability.} Valid SELFIES and P-SMILES strings do
-  not imply straightforward synthetic routes or polymerisation feasibility.
+  \item \textbf{Heuristics vs.\ bench synthesis.} SA-Score and BRICS disconnection indicate
+  standard building-block accessibility but do not replace full multi-step route planning or
+  polymerisation trials.
 \end{itemize}
 
 \section*{Data and code availability}

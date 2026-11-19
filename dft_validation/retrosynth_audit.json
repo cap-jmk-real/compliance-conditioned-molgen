@@ -1,0 +1,50 @@
+{
+  "uvvis_all_compliant_generated": {
+    "n_evaluated": 592,
+    "sa_mean": 2.92,
+    "sa_median": 2.88,
+    "sa_sd": 0.32,
+    "sa_le_4p0": 0.9882,
+    "sa_le_4p5": 0.9932,
+    "brics_decomposable": 0.9932,
+    "brics_mean_frags": 5.45,
+    "mean_chiral_centers": 0.04,
+    "mean_heavy_atoms": 24.7
+  },
+  "uvvis_top50_dft_pool": {
+    "n_evaluated": 50,
+    "sa_mean": 2.9,
+    "sa_median": 2.89,
+    "sa_sd": 0.17,
+    "sa_le_4p0": 1.0,
+    "sa_le_4p5": 1.0,
+    "brics_decomposable": 0.96,
+    "brics_mean_frags": 5.26,
+    "mean_chiral_centers": 0.0,
+    "mean_heavy_atoms": 25.0
+  },
+  "plastics_top_compliant": {
+    "n_evaluated": 50,
+    "sa_mean": 2.48,
+    "sa_median": 2.46,
+    "sa_sd": 0.38,
+    "sa_le_4p0": 1.0,
+    "sa_le_4p5": 1.0,
+    "brics_decomposable": 0.98,
+    "brics_mean_frags": 5.66,
+    "mean_chiral_centers": 0.02,
+    "mean_heavy_atoms": 46.9
+  },
+  "pharma_top_consensus_v3": {
+    "n_evaluated": 10,
+    "sa_mean": 3.71,
+    "sa_median": 3.55,
+    "sa_sd": 0.53,
+    "sa_le_4p0": 0.7,
+    "sa_le_4p5": 0.8,
+    "brics_decomposable": 1.0,
+    "brics_mean_frags": 4.7,
+    "mean_chiral_centers": 1.5,
+    "mean_heavy_atoms": 26.1
+  }
+}
