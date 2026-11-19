@@ -1,0 +1,87 @@
+{
+  "a": "A100",
+  "b": "RTX3060",
+  "metrics": {
+    "plain.validity": {
+      "a": 1.0,
+      "b": 1.0,
+      "diff": 0.0
+    },
+    "steered.validity": {
+      "a": 1.0,
+      "b": 1.0,
+      "diff": 0.0
+    },
+    "plain.uniqueness": {
+      "a": 0.9999,
+      "b": 1.0,
+      "diff": 9.999999999998899e-05
+    },
+    "steered.uniqueness": {
+      "a": 0.9998,
+      "b": 0.9998,
+      "diff": 0.0
+    },
+    "plain.novelty": {
+      "a": 0.9989,
+      "b": 0.9981,
+      "diff": -0.0008000000000000229
+    },
+    "steered.novelty": {
+      "a": 0.999,
+      "b": 0.9989,
+      "diff": -9.999999999998899e-05
+    },
+    "plain.rule_pass_rate": {
+      "a": 0.9635,
+      "b": 0.9614,
+      "diff": -0.0020999999999999908
+    },
+    "steered.rule_pass_rate": {
+      "a": 0.9991,
+      "b": 0.9986,
+      "diff": -0.0004999999999999449
+    },
+    "plain.in_band_fraction": {
+      "a": 0.1867,
+      "b": 0.1864,
+      "diff": -0.0002999999999999947
+    },
+    "steered.in_band_fraction": {
+      "a": 0.2371,
+      "b": 0.2523,
+      "diff": 0.015200000000000019
+    },
+    "plain.mean_pred_abs_nm": {
+      "a": 365.69,
+      "b": 366.28,
+      "diff": 0.589999999999975
+    },
+    "steered.mean_pred_abs_nm": {
+      "a": 376.92,
+      "b": 381.22,
+      "diff": 4.300000000000011
+    }
+  },
+  "bootstrap_diff": {
+    "a": {
+      "point_estimate": 0.0504,
+      "ci_low": 0.0425,
+      "ci_high": 0.0582,
+      "ci_level": 0.95,
+      "n_bootstrap": 2000,
+      "frac_resamples_positive": 1.0,
+      "excludes_zero": true
+    },
+    "b": {
+      "point_estimate": 0.0658,
+      "ci_low": 0.0582,
+      "ci_high": 0.0738,
+      "ci_level": 0.95,
+      "n_bootstrap": 2000,
+      "frac_resamples_positive": 1.0,
+      "excludes_zero": true
+    },
+    "diff": 0.015399999999999997
+  }
+}

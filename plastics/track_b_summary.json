@@ -1,0 +1,43 @@
+{
+  "dataset": "LAMALAB_CURATED_Tg_structured_polymerclass.csv (CC-BY-4.0, Zenodo 10.5281/zenodo.15210035)",
+  "target_band_K": [
+    450.0,
+    550.0
+  ],
+  "compliance_rules": "REACH smarts_rules.py (PFAS, ortho-phthalates, organotin, etc.) + Bisphenol-A motif",
+  "gnn_ensemble_test": {
+    "mae_K": 20.958112716674805,
+    "rmse_K": 32.100982666015625,
+    "r2": 0.9217482805252075
+  },
+  "holdout_et_test": {
+    "mae_K": 31.35944773928726,
+    "rmse_K": 47.38574685366312,
+    "r2": 0.8184524254227156
+  },
+  "prior": {
+    "name": "prior",
+    "n_samples": 3000,
+    "psmiles_valid": 0.7173333333333334,
+    "uniqueness": 0.8991635687732342,
+    "novelty": 0.6129198966408269,
+    "compliance_pass": 0.8931226765799256,
+    "int_div": 0.8575226013739692,
+    "in_band_4gnn": 0.2012081784386617,
+    "in_band_holdout_et": 0.19144981412639406,
+    "compliant_and_in_band_both": 0.13104089219330856
+  },
+  "compliance_reinvent_4gnn": {
+    "name": "compliance_reinvent_4gnn",
+    "n_samples": 3000,
+    "psmiles_valid": 0.9666666666666667,
+    "uniqueness": 0.9255172413793104,
+    "novelty": 0.9914307004470939,
+    "compliance_pass": 0.9996551724137931,
+    "int_div": 0.6738735771808517,
+    "in_band_4gnn": 0.8068965517241379,
+    "in_band_holdout_et": 0.5224137931034483,
+    "compliant_and_in_band_both": 0.4579310344827586
+  },
+  "n_novel_compliant_inband_exported": 50
+}

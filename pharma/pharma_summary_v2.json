@@ -1,0 +1,64 @@
+{
+  "targets": {
+    "on_target": "5-HT1A (CHEMBL214)",
+    "anti_targets": [
+      "5-HT2B (CHEMBL1833)",
+      "hERG (CHEMBL240)"
+    ]
+  },
+  "zinc_prior": {
+    "name": "zinc_prior",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 1.0,
+    "novelty": 1.0,
+    "int_div": 0.874776491816312,
+    "reach_pains_pass": 0.9393333333333334,
+    "cns_bbb_pass": 0.6673333333333333,
+    "mean_qed": 0.6582466190342202,
+    "5ht1a_ge_7_gnn": 0.0013333333333333333,
+    "5ht1a_ge_7_holdout": 0.24366666666666667,
+    "5ht2b_le_5p8_gnn": 0.5653333333333334,
+    "herg_le_5p5_gnn": 0.8593333333333333,
+    "all_criteria_gnn": 0.0,
+    "all_criteria_holdout": 0.03133333333333333,
+    "all_criteria_both": 0.0
+  },
+  "sft_warmstart_prior": {
+    "name": "sft_warmstart_prior",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 0.9986666666666667,
+    "novelty": 0.9813084112149533,
+    "int_div": 0.8617960540888615,
+    "reach_pains_pass": 0.9776666666666667,
+    "cns_bbb_pass": 0.5283333333333333,
+    "mean_qed": 0.5750199431469502,
+    "5ht1a_ge_7_gnn": 0.34833333333333333,
+    "5ht1a_ge_7_holdout": 0.49033333333333334,
+    "5ht2b_le_5p8_gnn": 0.177,
+    "herg_le_5p5_gnn": 0.61,
+    "all_criteria_gnn": 0.004666666666666667,
+    "all_criteria_holdout": 0.028,
+    "all_criteria_both": 0.0003333333333333333
+  },
+  "cns_safe_reinvent_v2": {
+    "name": "cns_safe_reinvent_v2",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 0.26566666666666666,
+    "novelty": 0.9899623588456713,
+    "int_div": 0.603261742880119,
+    "reach_pains_pass": 0.9983333333333333,
+    "cns_bbb_pass": 0.9816666666666667,
+    "mean_qed": 0.7886310017066236,
+    "5ht1a_ge_7_gnn": 0.42133333333333334,
+    "5ht1a_ge_7_holdout": 0.912,
+    "5ht2b_le_5p8_gnn": 0.551,
+    "herg_le_5p5_gnn": 0.959,
+    "all_criteria_gnn": 0.021666666666666667,
+    "all_criteria_holdout": 0.019333333333333334,
+    "all_criteria_both": 0.0003333333333333333
+  },
+  "n_novel_safe_candidates_exported": 1
+}
