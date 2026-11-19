@@ -48,11 +48,11 @@ polymers ($T_g$ 450--550~K, 7{,}367 CC-BY-4.0 P-SMILES), the 4-GNN ensemble reac
 raises REACH/BPA-free compliance from $0.893$ to $0.9997$, validity from $0.717$ to
 $0.967$, and in-band yield from $0.201$ to $0.807$ (4-GNN) and $0.522$ (holdout) at
 $0.926$ uniqueness and $0.991$ novelty. For non-hallucinogenic central nervous system
-(CNS) ligands (ChEMBL~37; high \texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}),
+(CNS) ligands (ChEMBL~37, high \texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}),
 GNN ensembles outperform ExtraTrees on all three targets ($R^2=0.687, 0.460, 0.617$ vs.\
 $0.350, 0.094, 0.286$). Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from
 $0.001$ to $0.348$ but degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG}
-($0.859 \to 0.610$) safety; multi-objective safety REINVENT restores \texttt{5-HT2B}
+($0.859 \to 0.610$) safety. Multi-objective safety REINVENT restores \texttt{5-HT2B}
 ($0.551$), \texttt{hERG} ($0.959$), CNS-BBB ($0.982$, QED $0.789$), and REACH/PAINS
 ($0.998$) while pushing \texttt{5-HT1A} to $0.421$ (GNN) and $0.912$ (holdout), at $0.266$
 uniqueness. All values are surrogate predictions.\footnote{The author
@@ -87,7 +87,7 @@ REACH/safety gates, and independent holdout verification.
 All property predictors operate directly on 2D molecular graphs built with RDKit. Node
 features encode atomic number (including dummy attachment atom \texttt{*} for polymer
 repeating units), hybridisation, degree, hydrogen count, formal charge, aromaticity, and
-ring membership; edge features encode bond order, conjugation, and ring membership. On each
+ring membership. Edge features encode bond order, conjugation, and ring membership. On each
 dataset we train four PyTorch GNN architectures on the identical 90/10 split (seed~42,
 Smooth-L1 loss, AdamW, cosine schedule):
 \begin{itemize}
@@ -124,7 +124,7 @@ receive zero reward.
 
 \subsection{Track 1: UV-Vis chromophores (400--450~nm)}
 Using the public experimental UV-Vis database of Joung et al.\ \cite{joung2020uvvis}
-(6{,}425 chromophores; $n_{\mathrm{train}}=5{,}782$, $n_{\mathrm{test}}=643$), every GNN
+(6{,}425 chromophores, $n_{\mathrm{train}}=5{,}782$, $n_{\mathrm{test}}=643$), every GNN
 outperforms the baseline Morgan-HGB surrogate (24.00~nm MAE), and the 4-GNN ensemble reaches
 \textbf{17.48~nm MAE} ($R^2=0.9221$, Table~\ref{tab:predictors}), beating the ExtraTrees
 holdout (18.50~nm).
@@ -142,7 +142,7 @@ $1.000$ novelty, and $0.983$ rule pass.
 
 \begin{table}[t]
 \centering
-\caption{Held-out predictor accuracy across all three domains (90/10 split; GNNs at seed~42, independent Holdout ExtraTrees at seed~1337).}
+\caption{Held-out predictor accuracy across all three domains (90/10 split, GNNs at seed~42, independent Holdout ExtraTrees at seed~1337).}
 \label{tab:predictors}
 \scriptsize
 \resizebox{\textwidth}{!}{%
@@ -223,8 +223,8 @@ P-SMILES GRU prior & 0.717 & 0.893 & 0.201 & 0.191 & 0.131 & 0.899 & 0.613 & 0.8
 We extract single-protein pChEMBL records from ChEMBL~37 \cite{zdrazil2024chembl} for the
 non-hallucinogenic psychiatric target \texttt{5-HT1A} (\texttt{CHEMBL214}, 6{,}121 unique
 molecules) alongside two mandatory cardiac safety anti-targets: \texttt{5-HT2B}
-(\texttt{CHEMBL1833}, 2{,}369 molecules; valvular heart disease) and \texttt{hERG}
-(\texttt{CHEMBL240}, 10{,}076 molecules; QT prolongation). On all three endpoints, GNN
+(\texttt{CHEMBL1833}, 2{,}369 molecules, valvular heart disease) and \texttt{hERG}
+(\texttt{CHEMBL240}, 10{,}076 molecules, QT prolongation). On all three endpoints, GNN
 ensembles double or quintuple held-out $R^2$ over ExtraTrees (Table~\ref{tab:predictors}),
 with \texttt{CARATE} achieving the best single-model \texttt{hERG} MAE (0.393~pChEMBL).
 
@@ -283,7 +283,7 @@ Four genuine scope boundaries apply:
   \item \textbf{Parse validity vs.\ synthesisability.} Valid SELFIES and P-SMILES strings do
   not imply straightforward synthetic routes or polymerisation feasibility.
   \item \textbf{Diversity under tight multi-target gates.} In Track~3, strong multi-target
-  selectivity reduced uniqueness to $0.266$; scaffold-level memory or discrete graph flow
+  selectivity reduced uniqueness to $0.266$. Scaffold-level memory or discrete graph flow
   matching priors remain promising next steps.
 \end{itemize}
 
