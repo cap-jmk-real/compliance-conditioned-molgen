@@ -118,7 +118,17 @@ chemical families (PFAS per OECD~2021, ortho-phthalate diesters, organotin compo
 with a bisphenol-A motif for polymers and RDKit PAINS filters \cite{baell2010pains} plus
 CNS blood--brain-barrier bounds ($\mathrm{MW}\le 450$, $\mathrm{TPSA}\le 90\,\text{\AA}^2$,
 $\mathrm{HBD}\le 3$, $\mathrm{QED}\ge 0.55$) for pharmaceuticals. Non-compliant structures
-receive zero reward.
+receive zero reward. Figure~\ref{fig:pipeline} summarises the unified four-stage pipeline.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_pipeline.pdf}
+\caption{Unified compliance-conditioned generation pipeline across UV-Vis chromophores,
+engineering polymers, and central nervous system ligands. Hard regulatory and safety gates
+zero the reward of non-compliant candidates before 4-GNN ensemble scoring, while an
+independent ExtraTrees holdout audits reward hacking outside the training loop.}
+\label{fig:pipeline}
+\end{figure}
 
 \section{Results}
 
@@ -134,11 +144,24 @@ samples per seed). Prefix conditioning shifts in-band yield modestly ($0.186 \to
 Successive-halving REINVENT meta-search (Round~2, \texttt{a29221}) reaches $0.543$ holdout
 in-band, and removing conservative inference-time prior blending and temperature in Round~3
 (\texttt{403657}) lifts holdout yield to $0.728 \pm 0.093$---yet under the independent graph
-predictor \texttt{GINE}, this Morgan-only policy scores only $0.514$. Training
-\texttt{403657} with a 60/40 blend of the 4-GNN ensemble and Morgan-HGB raises 4-GNN in-band
-yield to \textbf{0.720 $\pm$ 0.037}, matching the independent ExtraTrees holdout
-(\textbf{0.702 $\pm$ 0.025}) with $3.7\times$ lower cross-seed variance, $0.950$ uniqueness,
-$1.000$ novelty, and $0.983$ rule pass.
+predictor \texttt{GINE}, this Morgan-only policy scores only $0.514$. Training \texttt{403657} with a 60/40 blend of the 4-GNN ensemble and Morgan-HGB raises
+4-GNN in-band yield to \textbf{0.720 $\pm$ 0.037}, matching the independent ExtraTrees
+holdout (\textbf{0.702 $\pm$ 0.025}) with $3.7\times$ lower cross-seed variance, $0.950$
+uniqueness, $1.000$ novelty, and $0.983$ rule pass. Snapshot evaluations every 200 RL steps
+(Figure~\ref{fig:curves}A) confirm that 4-GNN and independent Holdout ExtraTrees in-band
+yields rise together from step~0 to step~1{,}200 while uniqueness remains above $0.99$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_learning_curves.pdf}
+\caption{REINVENT learning curves across all three domains. (A)~UV-Vis 400--450~nm
+three-seed snapshot trajectory (512 samples per seed every 200 steps, mean $\pm$ SD)
+showing 4-GNN and independent Holdout ExtraTrees rising together at $>0.99$ uniqueness.
+(B)~Plastics ($T_g$ 450--550~K) mean reward and high-reward fraction over 600 RL steps.
+(C)~CNS multi-objective safety REINVENT over 500 steps following the 8-epoch \texttt{5-HT1A}
+supervised warm-start.}
+\label{fig:curves}
+\end{figure}
 
 \begin{table}[t]
 \centering
@@ -233,13 +256,25 @@ samples reach \texttt{5-HT1A} $\ge 7.0$). An 8-epoch supervised warm-start on 4{
 compliant ChEMBL \texttt{5-HT1A} ligands resolves cold-start sparsity (\texttt{5-HT1A}
 $\ge 7.0$: $0.001 \to 0.348$), but exposes the classic serotonergic selectivity trap:
 \texttt{5-HT2B} safety ($\le 5.8$) collapses from $0.565$ to $0.177$ and \texttt{hERG} safety
-($\le 5.5$) drops from $0.859$ to $0.610$ (Table~\ref{tab:pharma}). Applying 500 steps of
-smooth additive multi-objective safety REINVENT restores \texttt{5-HT2B} safety to
+($\le 5.5$) drops from $0.859$ to $0.610$ (Table~\ref{tab:pharma}). Applying 500 steps of smooth additive multi-objective safety REINVENT
+(Figure~\ref{fig:curves}C and Figure~\ref{fig:summary}B) restores \texttt{5-HT2B} safety to
 \textbf{0.551} ($3.1\times$), \texttt{hERG} safety to \textbf{0.959}, CNS-BBB compliance to
-\textbf{0.982} (mean QED $0.789$), and REACH/PAINS pass to \textbf{0.998}, while raising
-\texttt{5-HT1A} ($\ge 7.0$) to \textbf{0.421} (GNN) / \textbf{0.912} (holdout) and joint
-all-criteria yield by $4.6\times$ ($0.0047 \to 0.0217$), at the cost of lower uniqueness
-($0.266$).
+\textbf{0.982} (mean QED $0.789$), and REACH/PAINS pass to \textbf{0.998}. At the same time,
+it raises \texttt{5-HT1A} ($\ge 7.0$) to \textbf{0.421} (GNN) and \textbf{0.912} (holdout)
+and increases joint all-criteria yield by $4.6\times$ ($0.0047 \to 0.0217$), at the cost of
+lower uniqueness ($0.266$). Figure~\ref{fig:summary}A compares held-out $R^2$ across all
+five endpoints.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_cross_domain_summary.pdf}
+\caption{Cross-domain quantitative summary. (A)~Held-out $R^2$ of the GNN ensembles versus
+independent ExtraTrees across all five optical, polymer, and CNS endpoints
+(Table~\ref{tab:predictors}). (B)~CNS selectivity trap after supervised warm-starting and
+multi-objective recovery after safety REINVENT across 3{,}000 fresh samples
+(Table~\ref{tab:pharma}).}
+\label{fig:summary}
+\end{figure}
 
 \begin{table}[t]
 \centering
