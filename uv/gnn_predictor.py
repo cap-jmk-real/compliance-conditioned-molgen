@@ -16,7 +16,7 @@ from rdkit import Chem
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
-ATOM_LIST = [1, 5, 6, 7, 8, 9, 14, 15, 16, 17, 35, 53]
+ATOM_LIST = [0, 1, 5, 6, 7, 8, 9, 14, 15, 16, 17, 35, 53]  # 0 = '*' attachment point in PSMILES
 HYB_LIST = [
     Chem.rdchem.HybridizationType.SP,
     Chem.rdchem.HybridizationType.SP2,
@@ -294,6 +294,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arch", choices=list(ARCHS), default="gine")
     ap.add_argument("--data", default="/home/s4il0r/t25-multiseed/ckpt-seeds/shared/uvvis_dataset.csv")
+    ap.add_argument("--smiles-col", default="smiles")
+    ap.add_argument("--target-col", default="abs_max_nm")
     ap.add_argument("--out", default="")
     ap.add_argument("--metrics", default="")
     ap.add_argument("--seed", type=int, default=42)
@@ -314,7 +316,7 @@ def main() -> None:
 
     df = pd.read_csv(args.data)
     graphs, y_vals = [], []
-    for smi, y in zip(df["smiles"], df["abs_max_nm"]):
+    for smi, y in zip(df[args.smiles_col], df[args.target_col]):
         g = mol_to_graph(str(smi))
         if g is not None and np.isfinite(y):
             graphs.append(g)

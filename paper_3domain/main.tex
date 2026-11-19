@@ -1,0 +1,304 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xurl}
+\usepackage{caption}
+\usepackage{orcidlink}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\emergencystretch=1em
+
+\title{\textbf{Compliance-Conditioned Molecular Generation Across Optical,\\
+Polymer, and CNS Targets with Graph Neural Network Ensembles}}
+
+\author{Julian M. Kleber\,\orcidlink{0000-0001-5518-0932}\\
+\small ORCID: 0000-0001-5518-0932\\
+\small Independent researcher, Berlin, Germany}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Generative molecular design usually optimises a single physical or biological objective while
+checking regulatory and safety constraints only after sampling. We evaluate a unified
+compliance-conditioned generation pipeline combining autoregressive language models
+(SELFIES and P-SMILES GRUs), REINVENT policy-gradient fine-tuning, explicit regulatory
+substructure screens (REACH Annex XIV/XVII motifs, PFAS, ortho-phthalates, organotin,
+bisphenol-A, PAINS), and four-architecture 2D graph neural network (GNN) ensembles
+(\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, and \texttt{CARATE}). Every run is evaluated
+against an independent fingerprint-based ExtraTrees holdout predictor excluded from all
+training rewards. Across three distinct domains on a single RTX~3060 GPU:
+(1)~\textbf{UV-Vis chromophores} (400--450~nm, ZINC250k): the 4-GNN ensemble reaches
+17.48~nm MAE ($R^2=0.922$, vs.\ 24.00~nm for Morgan-HGB), and 4-GNN+Morgan REINVENT lifts
+three-seed in-band yield from $0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$
+(4-GNN) and $0.702 \pm 0.025$ (independent ExtraTrees holdout) at $0.950$ uniqueness and
+$0.983$ rule pass.
+(2)~\textbf{Engineering polymers} ($T_g$ 450--550~K, 7{,}367 CC-BY-4.0 P-SMILES): the 4-GNN
+ensemble reaches 20.96~K MAE ($R^2=0.922$, vs.\ 31.36~K for ExtraTrees), and
+compliance-gated REINVENT raises REACH/BPA-free compliance from $0.893$ to $0.9997$,
+P-SMILES validity from $0.717$ to $0.967$, and in-band yield from $0.201$ to $0.807$
+(4-GNN) and $0.522$ (holdout) at $0.926$ uniqueness and $0.991$ novelty.
+(3)~\textbf{Non-hallucinogenic CNS ligands} (ChEMBL~37: high \texttt{5-HT1A}, low
+\texttt{5-HT2B} valvulopathy and \texttt{hERG} cardiotoxicity): GNN ensembles outperform
+ExtraTrees across all three targets ($R^2=0.687, 0.460, 0.617$ vs.\ $0.350, 0.094, 0.286$).
+Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from $0.001$ to $0.348$ but
+degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG} ($0.859 \to 0.610$) safety;
+multi-objective safety REINVENT restores \texttt{5-HT2B} ($0.551$), \texttt{hERG} ($0.959$),
+CNS-BBB ($0.982$, QED $0.789$), and REACH/PAINS ($0.998$) while pushing \texttt{5-HT1A} to
+$0.421$ (GNN) / $0.912$ (holdout), with an explicit uniqueness trade-off ($0.266$).
+All numbers are surrogate predictions; code and result files are public.\footnote{The author
+used AI coding, research and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity
+and SciSpace) to write code, run experiments, search and read literature, and draft and edit
+text. The research questions, study design and conclusions are the author's. The author
+checked all numbers against the released result files and every citation against its source,
+and takes full responsibility for the content.}
+\end{abstract}
+
+\section{Introduction}
+
+Practical molecular design is always multi-objective: an optical dye must absorb in a target
+wavelength band without containing regulated fluorochemicals; a high-temperature engineering
+plastic must reach a target glass transition temperature ($T_g$) without bisphenol-A (BPA)
+or per- and polyfluoroalkyl substances (PFAS); and a psychiatric drug candidate must engage
+its therapeutic receptor (such as \texttt{5-HT1A}) while avoiding cardiac valvulopathy
+(\texttt{5-HT2B}) and QT-prolonging \texttt{hERG} channel block.
+
+Two recurring failure modes limit generative pipelines on these tasks. First, soft
+conditioning alone (such as prefix tokens) often produces only a modest shift in property
+yield. Second, reinforcement learning against a single fingerprint regressor readily exploits
+out-of-distribution bits, producing high training-surrogate scores that collapse on an
+independent predictor. Here we test a concise, reproducible framework that addresses both
+issues across three chemical domains using one unified 4-GNN ensemble architecture, explicit
+REACH/safety gates, and independent holdout verification.
+
+\section{Methods}
+
+\subsection{Four-architecture 2D GNN ensemble}
+All property predictors operate directly on 2D molecular graphs built with RDKit. Node
+features encode atomic number (including dummy attachment atom \texttt{*} for polymer
+repeating units), hybridisation, degree, hydrogen count, formal charge, aromaticity, and
+ring membership; edge features encode bond order, conjugation, and ring membership. On each
+dataset we train four PyTorch GNN architectures on the identical 90/10 split (seed~42,
+Smooth-L1 loss, AdamW, cosine schedule):
+\begin{itemize}
+  \item \textbf{\texttt{GINE}} \cite{hu2020gine}: 4-layer edge-conditioned Graph Isomorphism
+  Network with mean+max global pooling.
+  \item \textbf{\texttt{GATv2}} \cite{brody2022gatv2}: 4-layer, 4-head edge-conditioned
+  dynamic graph attention.
+  \item \textbf{\texttt{MPNN}} \cite{gilmer2017mpnn}: weight-tied message passing with a
+  GRU node-state update over 4 steps.
+  \item \textbf{\texttt{CARATE}} \cite{kleber2021carate}: alternating GATv2 and GCN layers
+  with gated attention readout concatenated with mean+max pooling.
+\end{itemize}
+Their unweighted mean forms the \textbf{4-GNN ensemble}. To detect reward hacking, every
+domain also trains an independent \textbf{Holdout ExtraTrees} regressor (seed~1337, Morgan
+count radius-3 + MACCS + domain descriptors) that never enters any training reward.
+
+\subsection{Generators, compliance gates, and REINVENT steering}
+For small molecules (UV-Vis and CNS), we use a 2-layer GRU over SELFIES \cite{krenn2020selfies}
+pretrained on ZINC250k \cite{sterling2015zinc15} (249{,}455 molecules). For polymers, we train
+a 2-layer token-level GRU over P-SMILES repeating units (requiring exact RDKit parse validity
+and two degree-1 \texttt{*} attachment points). Policy-gradient fine-tuning uses the REINVENT
+augmented-likelihood objective \cite{blaschke2020reinvent},
+$\mathcal{L} = \mathbb{E}[(\log p_{\mathrm{prior}}(x) + \sigma R(x) - \log p_{\mathrm{agent}}(x))^2]$,
+paired with duplicate-memory buckets and applicability-domain damping where needed.
+
+Regulatory compliance is enforced via explicit SMARTS rules covering REACH Annex~XIV/XVII
+chemical families (PFAS per OECD~2021, ortho-phthalate diesters, organotin compounds), extended
+with a bisphenol-A motif for polymers and RDKit PAINS filters \cite{baell2010pains} plus
+CNS blood--brain-barrier bounds ($\mathrm{MW}\le 450$, $\mathrm{TPSA}\le 90\,\text{\AA}^2$,
+$\mathrm{HBD}\le 3$, $\mathrm{QED}\ge 0.55$) for pharmaceuticals. Non-compliant structures
+receive zero reward.
+
+\section{Results}
+
+\subsection{Track 1: UV-Vis chromophores (400--450~nm)}
+Using the public experimental UV-Vis database of Joung et al.\ \cite{joung2020uvvis}
+(6{,}425 chromophores; $n_{\mathrm{train}}=5{,}782$, $n_{\mathrm{test}}=643$), every GNN
+outperforms the baseline Morgan-HGB surrogate (24.00~nm MAE), and the 4-GNN ensemble reaches
+\textbf{17.48~nm MAE} ($R^2=0.9221$, Table~\ref{tab:predictors}), beating the ExtraTrees
+holdout (18.50~nm).
+
+Table~\ref{tab:uvvis} traces steering progression across three prior seeds (10{,}000 fresh
+samples per seed). Prefix conditioning shifts in-band yield modestly ($0.186 \to 0.252$).
+Successive-halving REINVENT meta-search (Round~2, \texttt{a29221}) reaches $0.543$ holdout
+in-band, and removing conservative inference-time prior blending and temperature in Round~3
+(\texttt{403657}) lifts holdout yield to $0.728 \pm 0.093$---yet under the independent graph
+predictor \texttt{GINE}, this Morgan-only policy scores only $0.514$. Training
+\texttt{403657} with a 60/40 blend of the 4-GNN ensemble and Morgan-HGB raises 4-GNN in-band
+yield to \textbf{0.720 $\pm$ 0.037}, matching the independent ExtraTrees holdout
+(\textbf{0.702 $\pm$ 0.025}) with $3.7\times$ lower cross-seed variance, $0.950$ uniqueness,
+$1.000$ novelty, and $0.983$ rule pass.
+
+\begin{table}[t]
+\centering
+\caption{Held-out predictor accuracy across all three domains (90/10 split; GNNs at seed~42, independent Holdout ExtraTrees at seed~1337).}
+\label{tab:predictors}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Domain / Target & Unit ($n_{\mathrm{test}}$) & \texttt{GINE} & \texttt{GATv2} & \texttt{MPNN} & \texttt{CARATE} & \textbf{4-GNN Ens.\ MAE ($R^2$)} & Holdout ET MAE ($R^2$) \\
+\midrule
+UV-Vis $\lambda_{\max}$ & nm (643) & 19.64 & 18.35 & 19.86 & 19.84 & \textbf{17.48 (0.922)} & 18.50 (0.928) \\
+Polymer $T_g$ & K (737) & 22.10 & 22.88 & 22.86 & 22.56 & \textbf{20.96 (0.922)} & 31.36 (0.818) \\
+CNS \texttt{5-HT1A} & pChEMBL (613) & 0.530 & 0.502 & 0.502 & 0.525 & \textbf{0.487 (0.687)} & 0.698 (0.350) \\
+Anti-target \texttt{5-HT2B} & pChEMBL (237) & 0.572 & 0.535 & -- & 0.540 & \textbf{0.527 (0.460)}$^a$ & 0.654 (0.094) \\
+Anti-target \texttt{hERG} & pChEMBL (1{,}008) & 0.394 & 0.394 & -- & 0.393 & \textbf{0.373 (0.617)}$^a$ & 0.547 (0.286) \\
+\bottomrule
+\multicolumn{8}{@{}l}{\footnotesize $^a$ 3-GNN ensemble (\texttt{GINE}+\texttt{GATv2}+\texttt{CARATE}). Baseline Morgan-HGB on UV-Vis: 24.00~nm MAE.}
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Track 1 (UV-Vis 400--450~nm): three-seed progression (10{,}000 fresh samples/seed, mean $\pm$ SD). Holdout ExtraTrees is never used in training.}
+\label{tab:uvvis}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Method & Holdout ET & 4-GNN Ens. & Morgan-HGB & Uniq. & Rule & Int.\ div. \\
+\midrule
+Plain ZINC250k prior & 0.191 & 0.078$^a$ & 0.186$\pm$0.007 & 1.000 & 0.963 & 0.886 \\
+Prefix conditioning & 0.231 & -- & 0.252$\pm$0.004 & 1.000 & 0.999 & 0.885 \\
+REINVENT Round~2 (\texttt{a29221}) & 0.543$\pm$0.049 & -- & 0.598$\pm$0.015 & 0.986$\pm$0.005 & 0.999$\pm$0.001 & 0.799$\pm$0.012 \\
+REINVENT Round~3 (\texttt{403657}, Morgan) & 0.728$\pm$0.093 & 0.514$^a$ & 0.717$\pm$0.044 & 0.905$\pm$0.025 & 0.971$\pm$0.024 & 0.800$\pm$0.008 \\
+\textbf{REINVENT 4-GNN + Morgan (\texttt{403657})} & \textbf{0.702$\pm$0.025} & \textbf{0.720$\pm$0.037} & 0.512$\pm$0.038 & \textbf{0.950$\pm$0.010} & \textbf{0.983$\pm$0.004} & 0.799$\pm$0.010 \\
+\bottomrule
+\multicolumn{7}{@{}l}{\footnotesize $^a$ Scored on \texttt{GINE} (3{,}000 samples, prior seed~1). Validity and novelty are 1.000 across all REINVENT runs.}
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Track 2: Plastics --- REACH- and BPA-free engineering polymers (450--550~K)}
+We use the CC-BY-4.0 curated homopolymer $T_g$ dataset of Kunchapu and Jablonka
+\cite{kunchapu2025tg} (7{,}367 RDKit-valid P-SMILES, $T_g \in [134.2, 768.1]$~K). Unlike
+ZINC250k, this corpus exhibits substantial regulatory tension: \textbf{15.07\%} (1{,}110
+polymers) fail the combined REACH+BPA screen (863 PFAS, 519 BPA motifs, 7 organotin, 4
+ortho-phthalates). On held-out test polymers ($n=737$), the 4-GNN ensemble achieves
+\textbf{20.96~K MAE} ($R^2=0.922$), beating ExtraTrees (31.36~K, $R^2=0.818$) by more than
+10~K (Table~\ref{tab:predictors}).
+
+After 600 steps of compliance-gated REINVENT targeting $T_g \in [450, 550]$~K
+(Table~\ref{tab:plastics}), P-SMILES validity rises from $0.717$ to \textbf{0.967}, REACH/BPA
+compliance from $0.893$ to \textbf{0.9997}, and in-band yield from $0.201$ to \textbf{0.807}
+(4-GNN) and $0.191$ to \textbf{0.522} (independent Holdout ExtraTrees), with $0.926$
+uniqueness and $0.991$ novelty. Top exported novel candidates recover plausible PFAS- and
+BPA-free poly(ether-sulfone) and aromatic polyamide backbones (e.g.\ a bis-phenoxy diphenyl-sulfone
+repeating unit, \nolinkurl{[*]Oc1ccc(S(=O)(=O)c2ccc(-c3ccc(Oc4ccc(Oc5ccc([*])cc5)cc4)cc3)cc2)cc1}
+at 477.9~K by 4-GNN and 524.2~K by Holdout ExtraTrees, exported in \texttt{top\_compliant\_polymers.csv}).
+
+\begin{table}[t]
+\centering
+\caption{Track 2 (Plastics, $T_g$ 450--550~K, REACH+BPA-free): 3{,}000 fresh P-SMILES samples.}
+\label{tab:plastics}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Model & P-SMILES valid & Compliance & In-band 4-GNN & In-band Holdout & Both+Comp. & Uniq. & Novelty & Int.\ div. \\
+\midrule
+P-SMILES GRU prior & 0.717 & 0.893 & 0.201 & 0.191 & 0.131 & 0.899 & 0.613 & 0.858 \\
+\textbf{Compliance-REINVENT (4-GNN)} & \textbf{0.967} & \textbf{0.9997} & \textbf{0.807} & \textbf{0.522} & \textbf{0.458} & \textbf{0.926} & \textbf{0.991} & 0.674 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Track 3: Pharmaceuticals --- non-hallucinogenic CNS (\texttt{5-HT1A} vs.\ \texttt{5-HT2B} \& \texttt{hERG})}
+We extract single-protein pChEMBL records from ChEMBL~37 \cite{zdrazil2024chembl} for the
+non-hallucinogenic psychiatric target \texttt{5-HT1A} (\texttt{CHEMBL214}, 6{,}121 unique
+molecules) alongside two mandatory cardiac safety anti-targets: \texttt{5-HT2B}
+(\texttt{CHEMBL1833}, 2{,}369 molecules; valvular heart disease) and \texttt{hERG}
+(\texttt{CHEMBL240}, 10{,}076 molecules; QT prolongation). On all three endpoints, GNN
+ensembles double or quintuple held-out $R^2$ over ExtraTrees (Table~\ref{tab:predictors}),
+with \texttt{CARATE} achieving the best single-model \texttt{hERG} MAE (0.393~pChEMBL).
+
+Direct RL from the generic ZINC250k prior fails due to reward sparsity (only 0.13\% of ZINC
+samples reach \texttt{5-HT1A} $\ge 7.0$). An 8-epoch supervised warm-start on 4{,}025
+compliant ChEMBL \texttt{5-HT1A} ligands resolves cold-start sparsity (\texttt{5-HT1A}
+$\ge 7.0$: $0.001 \to 0.348$), but exposes the classic serotonergic selectivity trap:
+\texttt{5-HT2B} safety ($\le 5.8$) collapses from $0.565$ to $0.177$ and \texttt{hERG} safety
+($\le 5.5$) drops from $0.859$ to $0.610$ (Table~\ref{tab:pharma}). Applying 500 steps of
+smooth additive multi-objective safety REINVENT restores \texttt{5-HT2B} safety to
+\textbf{0.551} ($3.1\times$), \texttt{hERG} safety to \textbf{0.959}, CNS-BBB compliance to
+\textbf{0.982} (mean QED $0.789$), and REACH/PAINS pass to \textbf{0.998}, while raising
+\texttt{5-HT1A} ($\ge 7.0$) to \textbf{0.421} (GNN) / \textbf{0.912} (holdout) and joint
+all-criteria yield by $4.6\times$ ($0.0047 \to 0.0217$), at the cost of lower uniqueness
+($0.266$).
+
+\begin{table}[t]
+\centering
+\caption{Track 3 (CNS: \texttt{5-HT1A} $\ge 7.0$, \texttt{5-HT2B} $\le 5.8$, \texttt{hERG} $\le 5.5$, CNS-BBB, REACH/PAINS-free): 3{,}000 fresh samples.}
+\label{tab:pharma}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Model & \texttt{5-HT1A}$\ge 7$ (GNN/ET) & \texttt{5-HT2B}$\le 5.8$ & \texttt{hERG}$\le 5.5$ & CNS-BBB & QED & REACH/PAINS & All (GNN) & Uniq. & Int.\ div. \\
+\midrule
+ZINC250k prior & 0.001 / 0.244 & 0.565 & 0.859 & 0.667 & 0.658 & 0.939 & 0.0000 & 1.000 & 0.875 \\
+SFT warm-start (8 ep.) & 0.348 / 0.490 & 0.177 & 0.610 & 0.528 & 0.575 & 0.978 & 0.0047 & 0.999 & 0.862 \\
+\textbf{Safety-REINVENT (GNN)} & \textbf{0.421 / 0.912} & \textbf{0.551} & \textbf{0.959} & \textbf{0.982} & \textbf{0.789} & \textbf{0.998} & \textbf{0.0217} & 0.266 & 0.603 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\section{Discussion and Scope Boundaries}
+
+Three consistent findings emerge across optical, polymer, and CNS design:
+(1)~Graph neural network ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
+\texttt{CARATE}) consistently outperform fingerprint trees on conjugation-sensitive and
+receptor-binding endpoints, and using them in the reward cuts cross-seed variance and
+holdout divergence.
+(2)~Hard compliance gates (REACH, BPA, PAINS, CNS-BBB) can be driven to $>98$--$99.9\%$
+simultaneously with high target yield.
+(3)~When target activity is rare in the prior and negatively correlated with safety
+anti-targets (as in \texttt{5-HT1A} vs.\ \texttt{5-HT2B}), supervised warm-starting followed
+by smooth multi-objective RL is required, and tight multi-target intersections narrow sample
+uniqueness.
+
+Four genuine scope boundaries apply:
+\begin{itemize}
+  \item \textbf{Surrogate scores vs.\ wet-lab measurements.} All optical, thermal, and
+  binding values are predicted by trained surrogates rather than measured experimentally.
+  \item \textbf{Pattern screens vs.\ legal/toxicological clearance.} SMARTS filters capture
+  known regulated chemical families and PAINS alerts, not formal regulatory or clinical
+  safety approval.
+  \item \textbf{Parse validity vs.\ synthesisability.} Valid SELFIES and P-SMILES strings do
+  not guarantee straightforward synthetic routes or polymerisation feasibility.
+  \item \textbf{Diversity under tight multi-target gates.} In Track~3, strong multi-target
+  selectivity reduced uniqueness to $0.266$; scaffold-level memory or discrete graph flow
+  matching priors remain promising next steps.
+\end{itemize}
+
+\section*{Data and code availability}
+Code, SMARTS compliance rules, GNN predictor scripts, and result summaries are hosted at
+\url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. Public datasets:
+ZINC250k \cite{sterling2015zinc15}, Joung et al.\ UV-Vis \cite{joung2020uvvis}, PolyMetriX
+curated $T_g$ (CC-BY-4.0, \cite{kunchapu2025tg}), and ChEMBL~37 (CC-BY-SA,
+\cite{zdrazil2024chembl}).
+
+\section*{Conflicts of interest}
+The author declares no conflict of interest.
+
+\bibliographystyle{unsrt}
+\bibliography{refs}
+
+\end{document}
