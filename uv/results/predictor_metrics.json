@@ -1,0 +1,9 @@
+{
+  "model": "morgan_ecfp2048_histgbm",
+  "n_train": 5203,
+  "n_test": 643,
+  "mae_nm": 24.04497731474747,
+  "rmse_nm": 38.19020081225773,
+  "r2": 0.8734010597056254,
+  "total_trees": 600
+}

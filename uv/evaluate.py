@@ -181,6 +181,7 @@ def main():
               f"excludes_zero={boot['excludes_zero']}", flush=True)
 
     meta = {
+        "seed": args.seed,
         "band_lo": args.band_lo, "band_hi": args.band_hi,
         "n_samples": args.n_samples, "device": device,
         "predictor_metrics": pred_metrics,
