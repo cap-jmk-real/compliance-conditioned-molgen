@@ -32,34 +32,30 @@ and Central Nervous System Targets with Graph Neural Network Ensembles}}
 
 \begin{abstract}
 \noindent
-Generative molecular design usually optimises a single physical or biological objective while
-checking regulatory and safety constraints only after sampling. We evaluate a unified
-compliance-conditioned generation pipeline combining autoregressive language models
-(SELFIES and P-SMILES GRUs), REINVENT policy-gradient fine-tuning, explicit regulatory
-substructure screens (REACH Annex XIV/XVII motifs, PFAS, ortho-phthalates, organotin,
-bisphenol-A, PAINS), and four-architecture 2D graph neural network (GNN) ensembles
-(\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, and \texttt{CARATE}). Every run is evaluated
-against an independent fingerprint-based ExtraTrees holdout predictor excluded from all
-training rewards. Across three distinct domains on a single RTX~3060 GPU:
-(1)~\textbf{UV-Vis chromophores} (400--450~nm, ZINC250k): the 4-GNN ensemble reaches
-17.48~nm MAE ($R^2=0.922$, vs.\ 24.00~nm for Morgan-HGB), and 4-GNN+Morgan REINVENT lifts
-three-seed in-band yield from $0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$
-(4-GNN) and $0.702 \pm 0.025$ (independent ExtraTrees holdout) at $0.950$ uniqueness and
-$0.983$ rule pass.
-(2)~\textbf{Engineering polymers} ($T_g$ 450--550~K, 7{,}367 CC-BY-4.0 P-SMILES): the 4-GNN
-ensemble reaches 20.96~K MAE ($R^2=0.922$, vs.\ 31.36~K for ExtraTrees), and
-compliance-gated REINVENT raises REACH/BPA-free compliance from $0.893$ to $0.9997$,
-P-SMILES validity from $0.717$ to $0.967$, and in-band yield from $0.201$ to $0.807$
-(4-GNN) and $0.522$ (holdout) at $0.926$ uniqueness and $0.991$ novelty.
-(3)~\textbf{Non-hallucinogenic CNS ligands} (ChEMBL~37: high \texttt{5-HT1A}, low
-\texttt{5-HT2B} valvulopathy and \texttt{hERG} cardiotoxicity): GNN ensembles outperform
-ExtraTrees across all three targets ($R^2=0.687, 0.460, 0.617$ vs.\ $0.350, 0.094, 0.286$).
-Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from $0.001$ to $0.348$ but
-degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG} ($0.859 \to 0.610$) safety;
-multi-objective safety REINVENT restores \texttt{5-HT2B} ($0.551$), \texttt{hERG} ($0.959$),
-CNS-BBB ($0.982$, QED $0.789$), and REACH/PAINS ($0.998$) while pushing \texttt{5-HT1A} to
-$0.421$ (GNN) / $0.912$ (holdout), with an explicit uniqueness trade-off ($0.266$).
-All numbers are surrogate predictions; code and result files are public.\footnote{The author
+Generative molecular design usually optimises one objective and checks regulatory limits
+only after sampling. We evaluate a compliance-conditioned pipeline combining SELFIES and
+P-SMILES GRUs, REINVENT fine-tuning, explicit substructure screens (REACH Annex~XIV/XVII,
+PFAS, ortho-phthalates, organotin, bisphenol-A, PAINS), and four-architecture 2D graph
+neural network (GNN) ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
+\texttt{CARATE}). Every run is evaluated on an independent ExtraTrees holdout excluded
+from training rewards across three domains on one RTX~3060 GPU. For UV-Vis chromophores
+(400--450~nm, ZINC250k), the 4-GNN ensemble reaches 17.48~nm MAE ($R^2=0.922$ vs.\
+24.00~nm for Morgan-HGB). Combining 4-GNN and Morgan rewards in REINVENT lifts three-seed
+in-band yield from $0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$ (4-GNN) and
+$0.702 \pm 0.025$ (holdout) at $0.950$ uniqueness and $0.983$ rule pass. For engineering
+polymers ($T_g$ 450--550~K, 7{,}367 CC-BY-4.0 P-SMILES), the 4-GNN ensemble reaches
+20.96~K MAE ($R^2=0.922$ vs.\ 31.36~K for ExtraTrees), and compliance-gated REINVENT
+raises REACH/BPA-free compliance from $0.893$ to $0.9997$, validity from $0.717$ to
+$0.967$, and in-band yield from $0.201$ to $0.807$ (4-GNN) and $0.522$ (holdout) at
+$0.926$ uniqueness and $0.991$ novelty. For non-hallucinogenic central nervous system
+(CNS) ligands (ChEMBL~37; high \texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}),
+GNN ensembles outperform ExtraTrees on all three targets ($R^2=0.687, 0.460, 0.617$ vs.\
+$0.350, 0.094, 0.286$). Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from
+$0.001$ to $0.348$ but degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG}
+($0.859 \to 0.610$) safety; multi-objective safety REINVENT restores \texttt{5-HT2B}
+($0.551$), \texttt{hERG} ($0.959$), CNS-BBB ($0.982$, QED $0.789$), and REACH/PAINS
+($0.998$) while pushing \texttt{5-HT1A} to $0.421$ (GNN) and $0.912$ (holdout), at $0.266$
+uniqueness. All values are surrogate predictions.\footnote{The author
 used AI coding, research and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity
 and SciSpace) to write code, run experiments, search and read literature, and draft and edit
 text. The research questions, study design and conclusions are the author's. The author
@@ -69,12 +65,13 @@ and takes full responsibility for the content.}
 
 \section{Introduction}
 
-Practical molecular design is always multi-objective: an optical dye must absorb in a target
-wavelength band without containing regulated fluorochemicals; a high-temperature engineering
-plastic must reach a target glass transition temperature ($T_g$) without bisphenol-A (BPA)
-or per- and polyfluoroalkyl substances (PFAS); and a psychiatric drug candidate must engage
-its therapeutic receptor (such as \texttt{5-HT1A}) while avoiding cardiac valvulopathy
-(\texttt{5-HT2B}) and QT-prolonging \texttt{hERG} channel block.
+Practical molecular design is inherently multi-objective. An optical dye must absorb in a
+target wavelength band without containing regulated fluorochemicals. A high-temperature
+engineering plastic must reach a target glass transition temperature ($T_g$) without
+bisphenol-A (BPA) or per- and polyfluoroalkyl substances (PFAS). Likewise, a psychiatric
+drug candidate must engage its therapeutic receptor (such as \texttt{5-HT1A}) while
+avoiding cardiac valvulopathy (\texttt{5-HT2B}) and QT-prolonging \texttt{hERG} channel
+block.
 
 Two recurring failure modes limit generative pipelines on these tasks. First, soft
 conditioning alone (such as prefix tokens) often produces only a modest shift in property
@@ -195,13 +192,15 @@ ortho-phthalates). On held-out test polymers ($n=737$), the 4-GNN ensemble achie
 10~K (Table~\ref{tab:predictors}).
 
 After 600 steps of compliance-gated REINVENT targeting $T_g \in [450, 550]$~K
-(Table~\ref{tab:plastics}), P-SMILES validity rises from $0.717$ to \textbf{0.967}, REACH/BPA
-compliance from $0.893$ to \textbf{0.9997}, and in-band yield from $0.201$ to \textbf{0.807}
-(4-GNN) and $0.191$ to \textbf{0.522} (independent Holdout ExtraTrees), with $0.926$
-uniqueness and $0.991$ novelty. Top exported novel candidates recover plausible PFAS- and
-BPA-free poly(ether-sulfone) and aromatic polyamide backbones (e.g.\ a bis-phenoxy diphenyl-sulfone
-repeating unit, \nolinkurl{[*]Oc1ccc(S(=O)(=O)c2ccc(-c3ccc(Oc4ccc(Oc5ccc([*])cc5)cc4)cc3)cc2)cc1}
-at 477.9~K by 4-GNN and 524.2~K by Holdout ExtraTrees, exported in \texttt{top\_compliant\_polymers.csv}).
+(Table~\ref{tab:plastics}), P-SMILES validity rises from $0.717$ to \textbf{0.967} and
+REACH/BPA compliance from $0.893$ to \textbf{0.9997}. In-band yield rises from $0.201$ to
+\textbf{0.807} (4-GNN) and from $0.191$ to \textbf{0.522} (independent Holdout ExtraTrees),
+at $0.926$ uniqueness and $0.991$ novelty. Top generated candidates recover plausible PFAS- and
+BPA-free poly(ether-sulfone) and aromatic polyamide backbones. For example, a bis-phenoxy
+diphenyl-sulfone repeating unit,
+\nolinkurl{[*]Oc1ccc(S(=O)(=O)c2ccc(-c3ccc(Oc4ccc(Oc5ccc([*])cc5)cc4)cc3)cc2)cc1}, scores
+477.9~K under 4-GNN and 524.2~K under Holdout ExtraTrees in the released compliant polymer
+summary.
 
 \begin{table}[t]
 \centering
@@ -260,16 +259,16 @@ SFT warm-start (8 ep.) & 0.348 / 0.490 & 0.177 & 0.610 & 0.528 & 0.575 & 0.978 &
 }
 \end{table}
 
-\section{Discussion and Scope Boundaries}
+\section{Discussion and Limitations}
 
-Three consistent findings emerge across optical, polymer, and CNS design:
-(1)~Graph neural network ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
-\texttt{CARATE}) consistently outperform fingerprint trees on conjugation-sensitive and
+Three consistent findings emerge across optical, polymer, and CNS design (Tables~\ref{tab:predictors}--\ref{tab:pharma}).
+Across all three tasks, graph neural network ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
+\texttt{CARATE}) outperform fingerprint trees on conjugation-sensitive and
 receptor-binding endpoints, and using them in the reward cuts cross-seed variance and
 holdout divergence.
-(2)~Hard compliance gates (REACH, BPA, PAINS, CNS-BBB) can be driven to $>98$--$99.9\%$
+Second, hard compliance gates (REACH, BPA, PAINS, CNS-BBB) reach $>98$--$99.9\%$ pass rates
 simultaneously with high target yield.
-(3)~When target activity is rare in the prior and negatively correlated with safety
+Third, when target activity is rare in the prior and negatively correlated with safety
 anti-targets (as in \texttt{5-HT1A} vs.\ \texttt{5-HT2B}), supervised warm-starting followed
 by smooth multi-objective RL is required, and tight multi-target intersections narrow sample
 uniqueness.
@@ -282,7 +281,7 @@ Four genuine scope boundaries apply:
   known regulated chemical families and PAINS alerts, not formal regulatory or clinical
   safety approval.
   \item \textbf{Parse validity vs.\ synthesisability.} Valid SELFIES and P-SMILES strings do
-  not guarantee straightforward synthetic routes or polymerisation feasibility.
+  not imply straightforward synthetic routes or polymerisation feasibility.
   \item \textbf{Diversity under tight multi-target gates.} In Track~3, strong multi-target
   selectivity reduced uniqueness to $0.266$; scaffold-level memory or discrete graph flow
   matching priors remain promising next steps.
