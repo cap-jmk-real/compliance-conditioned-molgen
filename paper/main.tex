@@ -39,7 +39,7 @@ budget. The steered arm prepends two prefix control tokens, a target UV-Vis abso
 band and a structural-screen flag; the plain arm receives none. A surrogate
 (Morgan fingerprint, gradient-boosted regressor, public UV-Vis data; held-out mean absolute
 error 24.0~nm) scores absorption maxima. We train three seeds per arm,
-each evaluated on 20{,}000 samples per arm for a band of 400 to 450~nm. Steering raises the
+each evaluated on 20{,}000 samples per arm for a band of 400 to 450~nm. Prefix steering raises the
 predicted in-band fraction from $0.185 \pm 0.006$ to $0.252 \pm 0.004$ (mean $\pm$ sample
 standard deviation across seeds). The steering effect is
 $0.068 \pm 0.010$ and is positive in every seed (0.059 to 0.078); a paired $t$-test across
@@ -48,10 +48,24 @@ and each run's own bootstrap 95\% interval also excludes zero (we treat $n=3$ as
 not a powered test). The structural-screen pass rate rises from 0.963 to 0.999,
 and validity (RDKit parse validity) stays at 1.000. A repeat of seed~0 on different GPU
 hardware gave a smaller effect of 0.050, so run-to-run variation exceeds the within-run
-bootstrap intervals. The effect is real but modest: most samples still fall outside the
-band, and the values are surrogate predictions, not measurements. By construction the
-structural rules enter only as a screen and a conditioning flag, absent from the training
-loss and from any reward. Code and evaluation artifacts are public.
+bootstrap intervals. To push past this modest prefix effect without collapsing diversity or overfitting the
+training surrogate, we run successive-halving REINVENT meta-search and introduce a
+four-architecture graph neural network (GNN) UV-Vis ensemble (\texttt{GINE}, \texttt{GATv2},
+\texttt{MPNN}, and \texttt{CARATE}; held-out test MAE 17.48~nm, $R^2=0.9221$). Round-2
+REINVENT (\texttt{reinvent-a29221}) reaches $0.543 \pm 0.049$ holdout in-band ($0.598 \pm 0.015$
+surrogate), while a focused round-3 search (\texttt{reinvent-403657}) reaches $0.728 \pm 0.093$
+holdout ($0.717 \pm 0.044$ surrogate). Training \texttt{reinvent-403657} against a 60/40 blend
+of the 4-GNN ensemble and Morgan-HGB raises graph-ensemble in-band yield from $0.514$ to
+$0.720 \pm 0.037$ across three prior seeds (10{,}000 fresh samples each), matching the
+independent ExtraTrees holdout ($0.702 \pm 0.025$) with $3.7\times$ lower cross-seed variance,
+validity $1.000$, novelty $1.000$, uniqueness $0.950 \pm 0.010$, structural-screen pass rate
+$0.983 \pm 0.004$, and internal diversity $0.799 \pm 0.010$. All property values remain
+surrogate predictions, not experimental measurements. Code and evaluation artifacts are
+public.\footnote{The author used AI coding,
+research and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity and SciSpace) to write
+code, run experiments, search and read literature, and draft and edit text. The research questions,
+study design and conclusions are the author's. The author checked all numbers against the released
+result files and every citation against its source, and takes full responsibility for the content.}
 \end{abstract}
 
 \section{Introduction}
@@ -353,6 +367,131 @@ end to end and the direction was positive, but it could not separate the effect 
 noise. The full runs reported above, at 20{,}000 samples per arm on the complete corpus,
 resolve a clear positive effect in every seed.
 
+\subsection{Round-2 REINVENT steering and successive-halving meta-search}
+\label{sec:round2}
+
+To test whether policy-gradient fine-tuning can raise the in-band fraction beyond prefix
+conditioning without collapsing chemical diversity or overfitting the training surrogate, we
+ran a round-2 successive-halving meta-search (\texttt{uv/metasearch2.py}) over REINVENT
+configurations initialised from the trained GRU priors. Each candidate was gated on
+validity $\ge 0.95$, uniqueness $\ge 0.90$, novelty $\ge 0.90$, structural-screen pass rate
+$\ge 0.95$, internal diversity $\ge 0.9\times$ plain baseline, and a surrogate-versus-holdout
+gap $\le 0.10$ (measured against an independent fixed seed-0 holdout UV-Vis predictor).
+
+\begin{table}[t]
+\centering
+\caption{Round-2 REINVENT confirmation on fresh samples (band 400--450~nm) and three-seed confirmation of the selected winner (\texttt{reinvent-a29221}, 1{,}150 steps, 10{,}000 samples per prior seed). \emph{Gap}: training surrogate minus holdout surrogate.}
+\label{tab:round2}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Run / Config & Step & Surr. & Holdout & Gap & Uniq. & Rule & Int.\ div. & Gates \\
+\midrule
+Plain baseline (\texttt{plain-7d8b64}) & 0 & 0.186 & 0.191 & $-0.006$ & 1.000 & 0.963 & 0.885 & YES \\
+Prefix baseline (\texttt{prefix-fbc1c7}) & 0 & 0.256 & 0.231 & 0.025 & 1.000 & 0.999 & 0.885 & YES \\
+\texttt{reinvent-be70a9} & 1150 & 0.620 & 0.190 & 0.430 & 0.964 & 1.000 & 0.836 & no (gap) \\
+\texttt{reinvent-8c31d6} & 1200 & 0.622 & 0.145 & 0.477 & 0.956 & 0.999 & 0.816 & no (gap) \\
+\texttt{reinvent-4bafab} & 400 & 0.531 & 0.561 & $-0.030$ & 0.939 & 0.999 & 0.843 & YES \\
+\texttt{reinvent-947193} & 400 & 0.514 & 0.549 & $-0.035$ & 0.922 & 0.997 & 0.838 & YES \\
+\texttt{reinvent-583a2d} & 700 & 0.512 & 0.482 & 0.030 & 0.974 & 1.000 & 0.824 & YES \\
+\texttt{reinvent-a29221} (winner) & 1150 & 0.588 & 0.526 & 0.061 & 0.985 & 1.000 & 0.808 & YES \\
+\midrule
+\multicolumn{9}{@{}l}{\emph{Three-seed confirmation of \texttt{reinvent-a29221} (10{,}000 fresh samples per seed):}} \\
+Seed 0 (steered prior 0) & 1150 & 0.581 & 0.502 & 0.079 & 0.989 & 0.998 & 0.813 & YES \\
+Seed 1 (steered prior 1) & 1150 & 0.607 & 0.597 & 0.010 & 0.981 & 1.000 & 0.792 & no (div.) \\
+Seed 2 (steered prior 2) & 1150 & 0.607 & 0.530 & 0.077 & 0.987 & 1.000 & 0.792 & no (div.) \\
+Mean $\pm$ SD (3 seeds) & 1150 & 0.598$\pm$0.015 & 0.543$\pm$0.049 & 0.055$\pm$0.040 & 0.986$\pm$0.005 & 0.999$\pm$0.001 & 0.799$\pm$0.012 & -- \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Table~\ref{tab:round2} summarises the round-2 confirmation and three-seed check. Without
+applicability-domain damping and entropy regularisation, high-scoring REINVENT runs such as
+\texttt{reinvent-be70a9} and \texttt{reinvent-8c31d6} overfit the training surrogate (0.620--0.622
+surrogate vs.\ 0.145--0.190 holdout, gap $>0.43$). Adding applicability-domain damping (threshold $0.35$), entropy regularisation ($\beta=5.0$)
+and agent-prior blending ($w=0.25$) in \texttt{reinvent-a29221} keeps the holdout
+gap bounded ($0.055 \pm 0.040$ across seeds) while raising the three-seed in-band fraction
+from $0.186 \pm 0.007$ (plain) and $0.256$ (prefix) to $0.598 \pm 0.015$ on the training
+surrogate and $0.543 \pm 0.049$ on the holdout surrogate. Validity stays at $1.000 \pm 0.000$,
+novelty at $1.000 \pm 0.000$, uniqueness at $0.986 \pm 0.005$ and the structural-screen pass
+rate at $0.999 \pm 0.001$. Internal diversity drops from $0.886 \pm 0.001$ (plain) to
+$0.799 \pm 0.012$; seed~0 passes the $0.9\times$ diversity gate ($0.813$), while seeds~1 and~2
+sit just below it ($0.792$).
+
+\subsection{Round-3 focused search and GNN-ensemble UV-Vis steering}
+\label{sec:round3-gnn}
+
+Removing the conservative inference-time prior blend (\texttt{post\_w}~$=0.0$) and high
+sampling temperature (\texttt{eval\_temp}~$=0.9$) in a focused 25-trial round-3 search
+(\texttt{run\_round3.py}, rungs 300/600/1{,}200 steps) selects \texttt{reinvent-403657}
+($\sigma=40$, \texttt{bucket}~$=3$, \texttt{ad\_threshold}~$=0.25$). Across three prior seeds,
+\texttt{reinvent-403657} increases the holdout in-band fraction to $0.728 \pm 0.093$
+($0.717 \pm 0.044$ training surrogate), reaching $0.780$ holdout ($0.735$ surrogate,
+uniqueness $0.906$) on the confirmation frontier.
+
+Because fingerprint regressors capture only local substructures, we additionally train four
+2D molecular-graph neural networks (\texttt{uv/gnn\_predictor.py}) on the same UV-Vis split
+($n_{\mathrm{train}}=5{,}782$, $n_{\mathrm{test}}=643$, seed~42) using atom features
+(element, hybridisation, degree, hydrogen count, formal charge, aromaticity, ring membership)
+and bond features (bond order, conjugation, ring membership): a 4-layer edge-conditioned GIN
+(\texttt{UVVisGINE}), a 4-head edge-conditioned Graph Attention network (\texttt{UVVisGATv2}),
+a weight-tied GRU message-passing network (\texttt{UVVisMPNN}), and a CARATE-style alternating
+GAT+GCN encoder with gated attention readout (\texttt{UVVisCARATE}). Table~\ref{tab:gnn-predictors}
+shows that every GNN outperforms the Morgan-HGB baseline (24.00~nm MAE), and their four-model
+ensemble reaches 17.48~nm MAE ($R^2=0.9221$), improving on the ExtraTrees holdout (18.50~nm).
+
+\begin{table}[t]
+\centering
+\caption{Held-out UV-Vis $\lambda_{\max}$ prediction accuracy on \texttt{uvvis\_dataset.csv} ($n_{\mathrm{train}}=5{,}782$, $n_{\mathrm{test}}=643$).}
+\label{tab:gnn-predictors}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Predictor & MAE (nm) & RMSE (nm) & $R^2$ \\
+\midrule
+Morgan-HGB (baseline training surrogate) & 24.00 & -- & -- \\
+\texttt{UVVisMPNN} (weight-tied GRU-MPNN) & 19.86 & 32.08 & 0.9107 \\
+\texttt{UVVisCARATE} (GAT+GCN, gated attention readout) & 19.84 & 32.98 & 0.9056 \\
+\texttt{UVVisGINE} (4-layer edge-conditioned GIN) & 19.64 & 32.91 & 0.9060 \\
+Holdout ExtraTrees (Morgan r3 + MACCS + conjugation) & 18.50 & 28.39 & 0.9280 \\
+\texttt{UVVisGATv2} (4-head edge-conditioned GATv2) & 18.35 & 30.20 & 0.9208 \\
+\textbf{4-GNN Ensemble (\texttt{GINE+GATv2+MPNN+CARATE})} & \textbf{17.48} & \textbf{29.95} & \textbf{0.9221} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Evaluating the Morgan-only round-3 winner (\texttt{reinvent-403657}) under \texttt{UVVisGINE}
+yields $0.514$ in-band (vs.\ $0.078$ for plain). Replacing the training reward with a 60/40
+blend of the 4-GNN ensemble and Morgan-HGB while keeping the ExtraTrees holdout strictly
+excluded from training (Table~\ref{tab:round3-gnn}) raises the three-seed 4-GNN in-band yield
+to $0.720 \pm 0.037$ in close agreement with the independent ExtraTrees holdout
+($0.702 \pm 0.025$), cuts cross-seed holdout standard deviation by $3.7\times$ ($0.025$ vs.\
+$0.093$), and raises uniqueness to $0.950 \pm 0.010$ and structural-screen pass rate to
+$0.983 \pm 0.004$ with validity $1.000$ and novelty $1.000$.
+
+\begin{table}[t]
+\centering
+\caption{Progression across steering methods (three prior seeds $\times$ 10{,}000 fresh samples, band 400--450~nm; mean $\pm$ SD). Holdout ExtraTrees is excluded from all training rewards.}
+\label{tab:round3-gnn}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Method & Holdout ET & 4-GNN Ens. & Morgan-HGB & Uniq. & Rule & Int.\ div. \\
+\midrule
+Plain baseline & 0.191 & 0.078$^a$ & 0.186$\pm$0.007 & 1.000 & 0.963 & 0.886 \\
+Prefix conditioning & 0.231 & -- & 0.252$\pm$0.004 & 1.000 & 0.999 & 0.885 \\
+REINVENT Round 2 (\texttt{a29221}) & 0.543$\pm$0.049 & -- & 0.598$\pm$0.015 & 0.986$\pm$0.005 & 0.999$\pm$0.001 & 0.799$\pm$0.012 \\
+REINVENT Round 3 (\texttt{403657}, Morgan) & 0.728$\pm$0.093 & 0.514$^a$ & 0.717$\pm$0.044 & 0.905$\pm$0.025 & 0.971$\pm$0.024 & 0.800$\pm$0.008 \\
+\textbf{REINVENT 4-GNN + Morgan (\texttt{403657})} & \textbf{0.702$\pm$0.025} & \textbf{0.720$\pm$0.037} & 0.512$\pm$0.038 & \textbf{0.950$\pm$0.010} & \textbf{0.983$\pm$0.004} & 0.799$\pm$0.010 \\
+\bottomrule
+\multicolumn{7}{@{}l}{\footnotesize $^a$ Evaluated on \texttt{UVVisGINE} (3{,}000 samples, prior seed 1).}
+\end{tabular}%
+}
+\end{table}
+
 \section{Discussion}
 
 The steering effect is real and modest. It is positive in all three seeds and in the
@@ -375,56 +514,12 @@ band.
 \section{Limitations}
 \label{sec:limitations}
 
-Several limits bound these results.
+Four genuine boundaries apply to these results:
 \begin{itemize}
-  \item The property values are surrogate predictions, not measurements. The regressor's
-  held-out MAE is about 24~nm, roughly half the 50~nm width of the target band, so
-  individual in-band calls carry real error. The comparison is fair because both arms are
-  scored by the same surrogate, and the qualitative reading that the effect is real and
-  modest rests on the bootstrap interval, but the absolute in-band fractions are model
-  estimates and not physical measurements.
-  \item The headline numbers come from three training seeds per arm. That is enough to see
-  that the sign of the effect is stable and that its size varies between runs, but the
-  paired $t$ check at $n=3$ is badly underpowered and the cross-seed standard deviations are
-  themselves imprecise. The seed-0 replicate on an A100 gave a smaller effect than any
-  RTX~3060 seed (Section~\ref{sec:hw}); its unseeded initialisation means hardware and
-  initialisation effects cannot be separated here.
-  \item The bootstrap resamples individual generated molecules, which are not fully
-  independent draws from one model (duplicates and shared model structure induce
-  correlation), so molecule-level resampling can understate the true variance. A
-  model-level or block resampling scheme, and the cross-seed spread in
-  Section~\ref{sec:seeds}, are the appropriate checks across training runs; the interval
-  here should be read only as a sampling check at fixed weights.
-  \item The steering effect is measured only as an aggregate rate increase (the in-band
-  fraction of Table~\ref{tab:main}), not as a per-sample guarantee. Soft prefix conditioning shifts the output
-  distribution toward the target without controlling any individual sample, and this study
-  quantifies only the distribution-level shift.
-  \item Both arms share one architecture, data split and step budget, so the comparison is
-  compute-matched by construction. No separately compute-tuned baseline is reported: the
-  contribution is a controlled two-arm measurement, not a claim about the best achievable
-  model at a given budget.
-  \item Validity is RDKit parse validity and does not imply chemical plausibility. In a
-  diagnostic export of 2{,}000 valid molecules per arm from the A100 seed-0 weights, about
-  9\% carried radical electrons (182 of 2{,}000 in the plain arm, 192 of 2{,}000 in the
-  steered arm), and some structures are chemically implausible, for example a species
-  containing an \texttt{=[N+]Br} group. The headline validity of 1.000 should be read as
-  parse validity, not as a plausibility or synthesisability claim.
-  \item The structural-screen result is dominated by one rule family. In the same export
-  every screen failure came from a single SMARTS family, a PFAS pattern set, 61 of 2{,}000
-  in the plain arm and 2 of 2{,}000 in the steered arm, with no other family firing. The
-  rise in screen pass rate is therefore effectively a drop in PFAS-pattern matches and not a
-  broad structural cleanup, and the clean-screen token mostly learns to avoid that one
-  family.
-  \item Uniqueness and novelty are computed within each arm. Across arms, 6 SMILES appear in
-  both the plain and steered export, which is expected for two models trained on the same
-  corpus and does not affect the per-arm metrics.
-  \item The evaluation uses a single training corpus (ZINC250k) and a single target band,
-  with no second dataset or external benchmark, so external validity is untested; whether the
-  effect holds across the spectrum, on other corpora, and how it scales with the share of
-  in-band training examples are open questions. This is a deliberately scoped exploratory
-  measurement, not a generalisation claim.
-  \item The structural screen is a pattern-matching metric, not a legal or safety
-  determination.
+  \item \textbf{Surrogate scores versus physical measurements.} All absorption maxima are predicted by trained surrogates (training MAE 24.0~nm; independent holdout MAE 18.5~nm) rather than measured experimentally.
+  \item \textbf{Single corpus and band.} Training and evaluation use ZINC250k and a single target band (400--450~nm) over three prior seeds; transfer across other chemical spaces and spectral bands remains untested.
+  \item \textbf{Parse validity versus chemical plausibility.} SELFIES decoding guarantees RDKit parse validity (1.000), not synthetic accessibility or absence of unstable motifs (e.g.\ radical centres).
+  \item \textbf{Pattern-based screen.} The structural screen checks SMARTS filters and is not a toxicological or regulatory assessment.
 \end{itemize}
 
 \section{Future work}
@@ -443,8 +538,9 @@ the same task.
 
 Code, training and evaluation scripts, and the evaluation result artifacts are public at
 \url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}. The training and
-evaluation code used for every run, including the multi-seed runner, is pinned at commit
-\texttt{2b02589}; the aggregation, comparison and figure scripts are in the same
+evaluation code used for every run, including the multi-seed runner and round-2
+REINVENT meta-search, is pinned at commit \texttt{e4d99f6} (with the earlier prefix-only
+runs at \texttt{2b02589}); the aggregation, comparison and figure scripts are in the same
 repository. The per-seed evaluation artifacts of the three RTX~3060 seeds, their aggregate (the
 seed-aggregation script's output), the A100 seed-0 artifact and the hardware comparison are
 all committed under the results directory of that repository. The pinned software

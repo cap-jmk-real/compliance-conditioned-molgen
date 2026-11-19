@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "seed": 0,
+      "in_band_surr": 0.49062,
+      "in_band_holdout": 0.72727,
+      "in_band_4gnn": 0.7167,
+      "uniqueness": 0.9592,
+      "novelty": 1.0,
+      "rule_pass_rate": 0.97998,
+      "int_div": 0.79627
+    },
+    {
+      "seed": 1,
+      "in_band_surr": 0.49086,
+      "in_band_holdout": 0.70097,
+      "in_band_4gnn": 0.684,
+      "uniqueness": 0.9514,
+      "novelty": 1.0,
+      "rule_pass_rate": 0.98707,
+      "int_div": 0.81016
+    },
+    {
+      "seed": 2,
+      "in_band_surr": 0.5558,
+      "in_band_holdout": 0.67677,
+      "in_band_4gnn": 0.7583,
+      "uniqueness": 0.9399,
+      "novelty": 1.0,
+      "rule_pass_rate": 0.98085,
+      "int_div": 0.79132
+    }
+  ],
+  "in_band_surr": {
+    "mean": 0.5124266666666667,
+    "sd": 0.03756260019398725
+  },
+  "in_band_holdout": {
+    "mean": 0.70167,
+    "sd": 0.025257276179350766
+  },
+  "in_band_4gnn": {
+    "mean": 0.7196666666666666,
+    "sd": 0.03723873431433097
+  },
+  "uniqueness": {
+    "mean": 0.9501666666666667,
+    "sd": 0.009708930596792537
+  },
+  "novelty": {
+    "mean": 1.0,
+    "sd": 0.0
+  },
+  "rule_pass_rate": {
+    "mean": 0.9826333333333332,
+    "sd": 0.00386681177888625
+  },
+  "int_div": {
+    "mean": 0.7992500000000001,
+    "sd": 0.009767123425041766
+  }
+}
