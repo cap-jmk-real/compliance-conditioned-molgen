@@ -196,23 +196,25 @@ def make_cross_domain_summary() -> None:
     ax1.grid(True, axis="y", linestyle=":", alpha=0.45)
     ax1.legend(loc="upper right", frameon=True, framealpha=0.92)
 
-    # Panel B: CNS Selectivity Trap & Recovery
+    # Panel B: CNS Selectivity Trap & Recovery (including Murcko scaffold memory)
     metrics = ["5-HT1A\n(GNN)", "5-HT1A\n(ET)", "5-HT2B\nsafe", "hERG\nsafe", "CNS-BBB", "REACH/\nPAINS", "Uniq."]
     zinc = np.array([0.001, 0.244, 0.565, 0.859, 0.667, 0.939, 1.000])
     sft = np.array([0.348, 0.490, 0.177, 0.610, 0.528, 0.978, 0.999])
     rl = np.array([0.421, 0.912, 0.551, 0.959, 0.982, 0.998, 0.266])
+    rl_scaf = np.array([0.445, 0.507, 0.228, 0.750, 0.788, 0.987, 0.994])
     x2 = np.arange(len(metrics))
-    w2 = 0.26
-    ax2.bar(x2 - w2, zinc, width=w2, color=SKY, label="ZINC250k prior")
-    ax2.bar(x2, sft, width=w2, color=VERMILION, label="SFT (8 ep.)")
-    ax2.bar(x2 + w2, rl, width=w2, color=GREEN, label="Safety-REINVENT")
+    w2 = 0.20
+    ax2.bar(x2 - 1.5 * w2, zinc, width=w2, color=SKY, label="ZINC prior")
+    ax2.bar(x2 - 0.5 * w2, sft, width=w2, color=VERMILION, label="SFT (8 ep.)")
+    ax2.bar(x2 + 0.5 * w2, rl, width=w2, color=GREEN, label="Safety-RL")
+    ax2.bar(x2 + 1.5 * w2, rl_scaf, width=w2, color=PURPLE, label="+ Murcko mem.")
     ax2.set_xticks(x2)
     ax2.set_xticklabels(metrics, fontsize=7.2)
     ax2.set_ylabel("Fraction (3,000 samples)")
-    ax2.set_ylim(0, 1.24)
-    ax2.set_title("B. CNS Selectivity Trap & Recovery")
+    ax2.set_ylim(0, 1.28)
+    ax2.set_title("B. CNS Selectivity Trap & Scaffold Memory")
     ax2.grid(True, axis="y", linestyle=":", alpha=0.45)
-    ax2.legend(loc="upper center", ncol=3, frameon=True, framealpha=0.92, fontsize=6.7, columnspacing=0.8, handletextpad=0.4)
+    ax2.legend(loc="upper center", ncol=2, frameon=True, framealpha=0.92, fontsize=6.6, columnspacing=0.9, handletextpad=0.4)
 
     fig.tight_layout(w_pad=1.6)
     fig.savefig(OUT_DIR / "fig_cross_domain_summary.pdf", bbox_inches="tight")

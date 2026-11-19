@@ -1,0 +1,64 @@
+{
+  "targets": {
+    "on_target": "5-HT1A (CHEMBL214)",
+    "anti_targets": [
+      "5-HT2B (CHEMBL1833)",
+      "hERG (CHEMBL240)"
+    ]
+  },
+  "zinc_prior": {
+    "name": "zinc_prior",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 1.0,
+    "novelty": 1.0,
+    "int_div": 0.874776491816312,
+    "reach_pains_pass": 0.9393333333333334,
+    "cns_bbb_pass": 0.6673333333333333,
+    "mean_qed": 0.6582466190342202,
+    "5ht1a_ge_7_gnn": 0.0013333333333333333,
+    "5ht1a_ge_7_holdout": 0.24366666666666667,
+    "5ht2b_le_5p8_gnn": 0.5653333333333334,
+    "herg_le_5p5_gnn": 0.8593333333333333,
+    "all_criteria_gnn": 0.0,
+    "all_criteria_holdout": 0.03133333333333333,
+    "all_criteria_both": 0.0
+  },
+  "sft_warmstart_prior": {
+    "name": "sft_warmstart_prior",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 0.998,
+    "novelty": 0.9802939211756847,
+    "int_div": 0.8607761485890538,
+    "reach_pains_pass": 0.9736666666666667,
+    "cns_bbb_pass": 0.5023333333333333,
+    "mean_qed": 0.5658437089676753,
+    "5ht1a_ge_7_gnn": 0.35133333333333333,
+    "5ht1a_ge_7_holdout": 0.487,
+    "5ht2b_le_5p8_gnn": 0.179,
+    "herg_le_5p5_gnn": 0.608,
+    "all_criteria_gnn": 0.0036666666666666666,
+    "all_criteria_holdout": 0.029,
+    "all_criteria_both": 0.0006666666666666666
+  },
+  "cns_safe_reinvent_v3_scaffold": {
+    "name": "cns_safe_reinvent_v3_scaffold",
+    "n_samples": 3000,
+    "valid": 1.0,
+    "uniqueness": 0.9943333333333333,
+    "novelty": 0.9932953402614817,
+    "int_div": 0.8521388984576542,
+    "reach_pains_pass": 0.9873333333333333,
+    "cns_bbb_pass": 0.7883333333333333,
+    "mean_qed": 0.6877408797962126,
+    "5ht1a_ge_7_gnn": 0.445,
+    "5ht1a_ge_7_holdout": 0.507,
+    "5ht2b_le_5p8_gnn": 0.22766666666666666,
+    "herg_le_5p5_gnn": 0.7496666666666667,
+    "all_criteria_gnn": 0.024333333333333332,
+    "all_criteria_holdout": 0.049666666666666665,
+    "all_criteria_both": 0.0033333333333333335
+  },
+  "n_novel_safe_candidates_exported": 10
+}
