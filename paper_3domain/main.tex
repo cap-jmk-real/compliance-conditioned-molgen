@@ -40,16 +40,16 @@ neural network (GNN) ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN},
 \texttt{CARATE}). Every run is evaluated on an independent ExtraTrees holdout excluded
 from training rewards across three domains on one RTX~3060 GPU. For UV-Vis chromophores
 (400--450~nm, ZINC250k), the 4-GNN ensemble reaches 17.48~nm MAE ($R^2=0.922$ vs.\
-24.00~nm for Morgan-HGB). Combining 4-GNN and Morgan rewards in REINVENT lifts three-seed
-in-band yield from $0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$ (4-GNN) and
-$0.702 \pm 0.025$ (holdout) at $0.950$ uniqueness and $0.983$ rule pass. For engineering
-polymers ($T_g$ 450--550~K, 7{,}367 CC-BY-4.0 P-SMILES), the 4-GNN ensemble reaches
-20.96~K MAE ($R^2=0.922$ vs.\ 31.36~K for ExtraTrees), and compliance-gated REINVENT
-raises REACH/BPA-free compliance from $0.893$ to $0.9997$, validity from $0.717$ to
-$0.967$, and in-band yield from $0.201$ to $0.807$ (4-GNN) and $0.522$ (holdout) at
-$0.926$ uniqueness and $0.991$ novelty. For non-hallucinogenic central nervous system
-(CNS) ligands (ChEMBL~37, high \texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}),
-GNN ensembles outperform ExtraTrees on all three targets ($R^2=0.687, 0.460, 0.617$ vs.\
+24.00~nm for Morgan-HGB). Combining 4-GNN and Morgan rewards in REINVENT lifts in-band yield over 3 seeds from
+$0.186$ (plain) and $0.252$ (prefix) to $0.720 \pm 0.037$ (4-GNN) and $0.702 \pm 0.025$
+(holdout) at $0.950$ uniqueness and $0.983$ rule pass. For engineering polymers ($T_g$
+450--550~K, 7{,}367 CC-BY-4.0 P-SMILES), the 4-GNN ensemble reaches 20.96~K MAE
+($R^2=0.922$ vs.\ 31.36~K for ExtraTrees). Compliance-gated REINVENT raises REACH/BPA-free
+compliance from $0.893$ to $0.9997$, validity from $0.717$ to $0.967$, and in-band yield
+from $0.201$ to $0.807$ (4-GNN) and $0.522$ (holdout) at $0.926$ uniqueness and $0.991$
+novelty. For non-hallucinogenic central nervous system (CNS) ligands (ChEMBL~37, high
+\texttt{5-HT1A}, low \texttt{5-HT2B} and \texttt{hERG}), GNN ensembles achieve higher
+held-out $R^2$ than ExtraTrees on all three targets ($R^2=0.687, 0.460, 0.617$ vs.\
 $0.350, 0.094, 0.286$). Supervised warm-starting raises \texttt{5-HT1A} ($\ge 7.0$) from
 $0.001$ to $0.348$ but degrades \texttt{5-HT2B} ($0.565 \to 0.177$) and \texttt{hERG}
 ($0.859 \to 0.610$) safety. Multi-objective safety REINVENT restores \texttt{5-HT2B}
