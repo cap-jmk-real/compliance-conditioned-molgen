@@ -222,7 +222,67 @@ def make_cross_domain_summary() -> None:
     print("Wrote fig_cross_domain_summary.pdf")
 
 
+def make_dft_retrosynth_figure() -> None:
+    import pandas as pd
+
+    dft_df = pd.read_csv(OUT_DIR.parent / "dft_validation" / "dft_50_results.csv")
+    ok = dft_df[dft_df["converged"] == True].copy()
+    lam_br = ok["brightest_nm"].to_numpy(dtype=float)
+    osc_br = ok["brightest_osc"].to_numpy(dtype=float)
+    s1_nm = ok["s1_nm"].to_numpy(dtype=float)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.2, 2.65), gridspec_kw={"width_ratios": [1.2, 1.0]})
+
+    # Panel A: Brightest TD-DFT transition vs oscillator strength
+    ax1.axvspan(400, 450, color=SKY, alpha=0.22, label="Target band (400–450 nm)")
+    ax1.axvspan(380, 400, color=SKY, alpha=0.09)
+    ax1.axvspan(450, 470, color=SKY, alpha=0.09)
+    ax1.axhline(0.05, color=GREY, linestyle="--", linewidth=0.9, label="Bright cutoff (f = 0.05)")
+
+    is_hit = (lam_br >= 380) & (lam_br <= 470) & (osc_br >= 0.05)
+    ax1.scatter(lam_br[~is_hit], np.clip(osc_br[~is_hit], 0, 0.55), s=24, color=BLUE, alpha=0.65,
+                edgecolors="none", label=f"Other converged (n={int((~is_hit).sum())})")
+    ax1.scatter(lam_br[is_hit], osc_br[is_hit], s=42, color=GREEN, edgecolors=DARK, linewidth=0.6,
+                zorder=4, label=f"Confirmed bright hits (n={int(is_hit.sum())})")
+    ax1.axvline(float(np.median(s1_nm)), color=VERMILION, linestyle=":", linewidth=1.3,
+                label=f"Median S1 ({np.median(s1_nm):.1f} nm)")
+    ax1.set_xlim(250, 680)
+    ax1.set_ylim(-0.02, 0.58)
+    ax1.set_xlabel("DF-B3LYP/6-31G brightest excitation λ (nm)")
+    ax1.set_ylabel("Oscillator strength f (clipped at 0.55)")
+    ax1.set_title("A. Ab-Initio TD-DFT Audit (n = 46)")
+    ax1.grid(True, linestyle=":", alpha=0.45)
+    ax1.legend(loc="upper right", frameon=True, framealpha=0.92, fontsize=6.4, handletextpad=0.4)
+
+    # Panel B: 3-Domain Retrosynthesis Audit (SA <= 4.0 and BRICS decomposable)
+    domains = ["UV-Vis\n(n=592)\nSA 2.92", "Plastics\n(n=50)\nSA 2.48", "CNS Pharma\n(n=10)\nSA 3.71"]
+    sa_ok = np.array([0.988, 1.000, 0.700])
+    brics_ok = np.array([0.993, 0.980, 1.000])
+    x = np.arange(len(domains))
+    w = 0.34
+    b1 = ax2.bar(x - w / 2, sa_ok, width=w, color=BLUE, label="SA-Score ≤ 4.0")
+    b2 = ax2.bar(x + w / 2, brics_ok, width=w, color=GREEN, label="BRICS decomposable")
+    for bars in (b1, b2):
+        for bar in bars:
+            h = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width() / 2, h + 0.02, f"{100 * h:.0f}%",
+                     ha="center", va="bottom", fontsize=7.0, color=DARK)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(domains, fontsize=7.5)
+    ax2.set_ylabel("Pass fraction")
+    ax2.set_ylim(0, 1.24)
+    ax2.set_title("B. Retrosynthesis & SA-Score Audit")
+    ax2.grid(True, axis="y", linestyle=":", alpha=0.45)
+    ax2.legend(loc="upper center", ncol=2, frameon=True, framealpha=0.92, fontsize=6.8, columnspacing=0.8)
+
+    fig.tight_layout(w_pad=1.4)
+    fig.savefig(OUT_DIR / "fig_dft_retrosynth.pdf", bbox_inches="tight")
+    plt.close(fig)
+    print("Wrote fig_dft_retrosynth.pdf")
+
+
 if __name__ == "__main__":
     make_pipeline_diagram()
     make_learning_curves()
     make_cross_domain_summary()
+    make_dft_retrosynth_figure()
