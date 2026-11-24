@@ -1,31 +1,24 @@
-\documentclass[11pt]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry}
-\usepackage{booktabs}
+\documentclass[12pt]{article}
+\usepackage{match}
 \usepackage{hyperref}
 \hypersetup{hidelinks}
-\title{Supporting Information\\\large Compliance-Conditioned Molecular Generation Across Optical, Polymer, and Central Nervous System Targets}
+\title{Supporting Information\\\large Compliance-conditioned molecular generation (MATCH submission)}
 \author{Julian M. Kleber}
-\date{November 19, 2026}
+\received{November 19, 2026}
 \begin{document}
 \maketitle
 
 \section*{S1. Software versions}
-Python~3.12; PyTorch (see repository \texttt{requirements.txt}); RDKit~\cite{landrum2013rdkit}; scikit-learn~\cite{pedregosa2011scikit}; PySCF~\cite{sun2016pyscf}.
+Python~3.12; PyTorch and RDKit versions in repository \texttt{requirements.txt}.
 
-\section*{S2. Regenerated tables and drift test}
-All headline metrics are emitted by \texttt{paper\_3domain/scripts/generate\_paper\_artifacts.py} into \texttt{paper\_3domain/generated/}. Continuous integration runs \texttt{tests/test\_paper\_generated\_drift.py} to block manuscript--artifact drift.
+\section*{S2. Generated tables and drift test}
+\texttt{paper\_3domain/scripts/generate\_paper\_artifacts.py} writes \texttt{paper\_3domain/generated/};
+\texttt{tests/test\_paper\_generated\_drift.py} guards against manuscript--artifact drift.
 
-\section*{S3. Scaffold-split stress test}
-An optional Murcko-scaffold-group held-out evaluation for UV-Vis predictors is implemented in \texttt{paper\_3domain/scripts/scaffold\_split\_eval.py} (requires GNN checkpoints; evaluation-only).
+\section*{S3. Scaffold-split evaluation}
+\texttt{paper\_3domain/scripts/scaffold\_split\_eval.py} (evaluation-only; requires GNN checkpoints).
 
-\section*{S4. Baseline scripts}
-Runnable REINVENT~4, GraphGA, and filter-after-generation wrappers live under \texttt{baselines/} with oracle budgets documented in \texttt{baselines/README.md}. Results are not included in this revision.
+\section*{S4. External baselines}
+Scripts under \texttt{baselines/}; oracle budgets in \texttt{baselines/README.md}.
 
-\section*{S5. Extended SMARTS compliance rules}
-Full SMARTS lists and OECD PFAS patterns are versioned in \texttt{smarts\_rules.py} and \texttt{SMARTS.md} in the repository.
-
-\bibliographystyle{unsrtnat}
-\bibliography{refs}
 \end{document}

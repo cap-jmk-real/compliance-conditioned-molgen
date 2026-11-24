@@ -1,260 +1,236 @@
-\documentclass[journal=jcisd8,manuscript=article]{achemso}
+\documentclass[12pt]{article}
+\usepackage{match}
 \usepackage[version=3]{mhchem}
 \usepackage{microtype}
-\usepackage{graphicx}
 \usepackage{xurl}
-\usepackage{caption}
 \usepackage{orcidlink}
 \usepackage{booktabs}
-\usepackage{amsmath,amssymb}
-\setcitestyle{super,sort&compress,comma}
+\usepackage[backend=biber,style=numeric,sorting=nyt,maxbibnames=10]{biblatex}
+\addbibresource{refs.bib}
+\input{generated/macros.tex}
 
-\captionsetup{font=small,labelfont=bf}
 \setlength{\parskip}{4pt}
 \setlength{\parindent}{0pt}
 \emergencystretch=1em
 
-\input{generated/macros.tex}
+\title{Compliance-conditioned molecular generation across optical, polymer, and central nervous system targets with graph neural network ensembles}
 
-\title{\textbf{Compliance-Conditioned Molecular Generation Across Optical, Polymer,\\
-and Central Nervous System Targets with Graph Neural Network Ensembles}}
+\author{Julian M. Kleber\,\orcidlink{0000-0001-5518-0932}\thanks{Corresponding author. Independent researcher, Berlin, Germany. E-mail: julian.kleber@pm.me (replace at submission). ORCID: 0000-0001-5518-0932.}}
 
-\author{Julian M. Kleber\,\orcidlink{0000-0001-5518-0932}}
-\affiliation[Independent]{Independent researcher, Berlin, Germany}
-
-\date{November 19, 2026}
+\date{}
 
 \begin{document}
 \maketitle
+\received{November 19, 2026}
 
 \begin{abstract}
-\noindent
-Generative molecular design usually optimises a single physical or biological target while
-treating regulatory bans and safety risks as an afterthought. At the same time,
-reinforcement learning against a single surrogate readily exploits out-of-distribution
-features or collapses onto narrow scaffolds. We evaluate a unified compliance-conditioned
-generation framework that embeds explicit regulatory and safety gates directly into
-REINVENT policy-gradient fine-tuning, guided by four-architecture 2D graph neural network
-ensembles (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, and \texttt{CARATE}) and audited
-by an independent ExtraTrees holdout excluded from training rewards. Across three distinct
-chemical domains on a single RTX~3060 GPU, the framework resolves domain-specific failure
-modes. For UV-Vis chromophores (400--450~nm), graph-ensemble rewards align training and
-holdout gains above $70\%$ in-band yield across three prior seeds ($n=10{,}000$ samples per
-seed) while cutting cross-seed variance nearly fourfold versus a Morgan-only reward.
-For engineering polymers ($T_g$ 450--550~K), where \MacroCorpFailPct{}\% of the
-curated corpus ($N=\MacroCorpN{}$) fails REACH or bisphenol-A rules, compliance-gated
-generation reaches \MacroPlCompliance{}\% compliance with a fourfold increase in target-band
-yield. For non-hallucinogenic central nervous system ligands (\texttt{5-HT1A} versus cardiac
-\texttt{5-HT2B} and \texttt{hERG} anti-targets), supervised warm-starting overcomes reward
-sparsity but triggers a selectivity trap that degrades cardiac safety. Smooth multi-objective safety
-fine-tuning paired with Bemis--Murcko scaffold memory resolves both cardiac safety and mode
-collapse, restoring uniqueness to \MacroCnsUniqMurcko{}. Finally, retrosynthetic audits confirm strong
-synthetic accessibility across all domains, and gas-phase time-dependent density functional
-theory (TD-DFT) screening on 50 UV-Vis candidates confirms visible absorption in
-\MacroDftVisFrac{}\% of converged structures while quantifying the residual surrogate-to-quantum gap.\footnote{The author
-used AI coding, research and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity
-and SciSpace) to write code, run experiments, search and read literature, and draft and edit
-text. The research questions, study design and conclusions are the author's. The author
-checked all numbers against the released result files and every citation against its source,
-and takes full responsibility for the content.}
+We describe a non-routine computer-based procedure for \emph{compliance-conditioned} de novo
+molecular generation: a binary regulatory filter composed with a multi-predictor graph-neural-network
+(GNN) ensemble reward, REINVENT augmented-likelihood policy optimisation, and an independent
+holdout regressor that is scored but never differentiated. The same executable pipeline is
+evaluated on three chemically distinct tasks---UV-Vis band steering, high-$T_g$ polymer design
+under REACH and bisphenol-A rules, and multi-objective central-nervous-system ligand generation
+with cardiac safety anti-targets. Across domains, hard gates reach high compliance while ensemble
+rewards track holdout gains; reported fractions and mean absolute errors are tied to archived JSON
+outputs (Tables~\ref{tab:uvvis}--\ref{tab:retro}). A gas-phase TD-DFT audit on $n=50$ chromophores
+quantifies the surrogate-to-quantum gap (\MacroDftMaeGnn{}~nm mean absolute error vs.\ $S_1$).
 \end{abstract}
 
-\section{Introduction}
-Practical molecular design is inherently multi-objective~\cite{schneider2010de,elton2019deep}.
-An optical dye must absorb in a target wavelength band without containing regulated
-fluorochemicals. A high-temperature engineering plastic must reach a target glass transition
-temperature ($T_g$) without bisphenol-A (BPA) or per- and polyfluoroalkyl substances
-(PFAS)~\cite{reach1907,oecd2021pfas}. Likewise, a psychiatric drug candidate must engage its
-therapeutic receptor (such as \texttt{5-HT1A}) while avoiding cardiac valvulopathy
-(\texttt{5-HT2B}) and QT-prolonging \texttt{hERG} channel block.
+\matchkeywords{compliance-conditioned generation; graph neural network ensemble; reinforcement learning; molecular design; computer chemistry; REACH screening; multi-objective optimisation}
 
-Two recurring failure modes limit generative pipelines on these tasks. First, soft
-conditioning alone (such as prefix tokens) often produces only a modest shift in property
-yield~\cite{gomez2018automatic,segler2018generative}. Second, reinforcement learning against
-a single fingerprint regressor readily exploits out-of-distribution bits, producing high
-training-surrogate scores that collapse on an independent predictor~\cite{olivecrona2017molgan}.
-Graph neural networks improve property estimation on conjugated and protein-ligand
-tasks~\cite{wang2017chemprop,xu2019molecular}, yet most generative studies still optimise a
-single oracle~\cite{brown2019guacamol,Polykovskiy2020}.
+\section{Introduction}
+
+MATCH Communications in Mathematical and in Computer Chemistry emphasises non-trivial mathematics
+or non-routine computer procedures with a clear chemical connection~\cite{matchjournalscope}.
+Here the chemical connection is explicit property and regulatory design across optical chromophores,
+engineering polymers, and serotonergic ligands. The mathematical--computational contribution is a
+\emph{composition} of (i)~a compliance indicator on molecular graphs, (ii)~a band or multi-target
+scoring functional built from GNN ensembles, (iii)~REINVENT policy-gradient updates, and
+(iv)~an evaluation layer that measures generalisation to a holdout model excluded from the reward.
+
+Standard generative pipelines often optimise a scalar surrogate while treating legal or safety
+constraints as soft penalties~\cite{gomez2018automatic,olivecrona2017molgan}. Fingerprint regressors
+are vulnerable to reward hacking when used alone in reinforcement learning~\cite{blaschke2020reinvent}.
+GNN surrogates improve conjugation-sensitive and protein-ligand estimates~\cite{wang2017chemprop,xu2019molecular},
+yet rarely appear together with hard compliance operators and audited holdout oracles in a single
+reproducible procedure~\cite{grisoni2021combining}.
+
+\textbf{Contributions.} (1)~We state the compliance--reward--optimisation operators in
+Section~\ref{sec:formulation} and implement them in one open repository across three domains.
+(2)~We publish an evaluation protocol with fixed sample sizes ($n=10{,}000$ per UV-Vis prior seed;
+$n=3{,}000$ for polymer and CNS steering batches) and seed-level dispersion summaries.
+(3)~We wire every headline table entry to committed result files via auto-generated \LaTeX{} fragments
+and a continuous-integration drift test. No claim is made beyond the reported surrogate, SA-Score,
+BRICS, and TD-DFT computations.
 
 \section{Related work}
-De novo molecular generators span autoregressive string models~\cite{segler2018generative,gomez2018automatic},
-reinforcement-learning fine-tuning~\cite{olivecrona2017molgan,blaschke2020reinvent,blaschke2024reinvent4},
-genetic algorithms on graphs~\cite{nigam2019augment,jin2020graphconv}, and flow-based
-architectures~\cite{zang2020mo}. Benchmark suites such as GuacaMol and MOSES standardise
-property optimisation tasks~\cite{brown2019guacamol,Polykovskiy2020}. Hard structural filters
-for nuisance chemotypes~\cite{baell2010pains,brenk2008} and multi-property RL for drug-likeness
-have been explored, but rarely together with independent holdout oracles that remain outside
-the training reward~\cite{grisoni2021combining,maziarz2023semantic}. The present study unifies
-explicit compliance gates, 4-GNN ensemble rewards, and ExtraTrees holdout auditing across
-three chemically distinct design problems on commodity GPU hardware.
 
-\section{Methods}
+Autoregressive and policy-gradient generators~\cite{segler2018generative,gomez2018automatic,blaschke2024reinvent4},
+genetic algorithms on graphs~\cite{nigam2019augment,jin2020graphconv}, and flow models~\cite{zang2020mo}
+define the algorithmic backdrop. Benchmark suites (GuacaMol, MOSES) standardise scalar optimisation
+\cite{brown2019guacamol,Polykovskiy2020}. PAINS and medicinal filters~\cite{baell2010pains,brenk2008}
+motivate hard constraints. The present work differs by composing hard SMARTS/BPA/BBB gates with
+ensemble GNN rewards and holdout-only auditing in one procedure applied identically to three chemistries.
+
+\section{Mathematical and algorithmic formulation}
+\label{sec:formulation}
+
+Let $x$ denote a molecular string (SELFIES or P-SMILES) decoded to a graph $G(x)$. Let
+$\mathcal{R}=\{r_1,\ldots,r_m\}$ be SMARTS-based rules (REACH families, BPA motif for polymers,
+PAINS for pharmaceuticals) plus domain-specific bounds (blood--brain-barrier descriptors for CNS).
+
+\paragraph{Compliance indicator.}
+Define $C(x)\in\{0,1\}$ by
+\begin{equation}
+C(x)=1 \quad\Leftrightarrow\quad \forall j:\; r_j(G(x))=\text{false}
+\quad\land\quad \text{BBB}(G(x))\ \text{if CNS},
+\end{equation}
+and $C(x)=0$ otherwise. Non-compliant candidates are removed from the reward support:
+$R(x)=0$ if $C(x)=0$.
+
+\paragraph{Property predictors.} For target property $y$ (e.g.\ $\lambda_{\max}$, $T_g$, pChEMBL),
+let $\hat{y}_{\mathrm{ens}}(x)$ be the unweighted mean of four GNN regressors trained on a fixed
+90/10 split (seed~42). Let $\hat{y}_{\mathrm{hold}}(x)$ be an independent ExtraTrees model on
+different features and split seed (1337). Only $\hat{y}_{\mathrm{ens}}$ (and optionally a legacy
+Morgan gradient-boosted surrogate) enters $R(x)$; $\hat{y}_{\mathrm{hold}}$ is used in evaluation only.
+
+\paragraph{Band and multi-objective scores.} For a band $[a,b]$ (UV-Vis nanometres or $T_g$ in kelvin),
+\begin{equation}
+B_{[a,b]}(x)=\mathbb{1}\bigl[a\le \hat{y}_{\mathrm{ens}}(x)\le b\bigr].
+\end{equation}
+For CNS, define criteria indicators $B_{5\text{-HT1A}}$, $B_{5\text{-HT2B}}$, $B_{\mathrm{hERG}}$
+on pChEMBL thresholds and combine them with $C(x)$ in the empirical joint yield
+(Table~\ref{tab:pharma}).
+
+\paragraph{Reward and REINVENT loss.} With prior $p_{\mathrm{prior}}$ and agent $p_{\mathrm{agent}}$,
+the augmented-likelihood objective~\cite{blaschke2020reinvent} minimises
+\begin{equation}
+\mathcal{L}=\mathbb{E}_{x\sim p_{\mathrm{agent}}}
+\Bigl[\bigl(\log p_{\mathrm{prior}}(x) + \sigma R(x) - \log p_{\mathrm{agent}}(x)\bigr)^2\Bigr],
+\end{equation}
+where $\sigma>0$ scales the reward. In practice $R(x)$ blends ensemble and Morgan terms for UV-Vis
+and applies multi-objective scalarisation for CNS after supervised warm-starting. Duplicate-memory and
+Murcko-scaffold caps modify the \emph{sampling} distribution without changing the formal definition of $R$.
+
+\paragraph{Evaluation functionals.} On a post-training sample of size $n$, report e.g.\ the in-band
+fraction
+\begin{equation}
+\phi_{[a,b]}=\frac{1}{n}\sum_{i=1}^{n} B_{[a,b]}(x_i)\,C(x_i),
+\end{equation}
+and the holdout analogue $\phi^{\mathrm{hold}}_{[a,b]}$ obtained by replacing
+$\hat{y}_{\mathrm{ens}}$ with $\hat{y}_{\mathrm{hold}}$ in $B_{[a,b]}$. Cross-seed dispersion is
+summarised by the sample mean $\pm$ SD over independent prior seeds (UV-Vis, $n=3$).
+
+\section{Computational methods}
 
 \subsection{Reporting and statistics}
-Steering evaluations draw $n=10{,}000$ (UV-Vis, three prior seeds), $n=3{,}000$ (polymers and
-CNS), or $n=50$ (TD-DFT subset) \emph{fresh} post-training samples unless noted otherwise.
-UV-Vis prefix steering across three training seeds reports paired differences with
-seed-level means, standard deviations, Student's $t$-test ($\mathrm{df}=2$), and $95\%$
-confidence intervals on the mean difference (see \texttt{uv/results/aggregate\_rtx3060\_seeds012.json}).
-Tables quote mean $\pm$ sample standard deviation (SD) across seeds or snapshots. Predictor
-benchmarks use fixed 90/10 splits (GNNs: seed~42; holdout ExtraTrees: seed~1337); optional
-Murcko-scaffold-group splits are provided as evaluation-only scripts (Supporting Information).
+Steering evaluations use $n=10{,}000$ (UV-Vis, three prior seeds), $n=3{,}000$ (polymers and CNS),
+or $n=50$ (TD-DFT pool). UV-Vis prefix steering reports paired seed-level summaries and
+Student's $t$-test ($\mathrm{df}=2$) on differences (artifact
+\texttt{uv/results/aggregate\_rtx3060\_seeds012.json}). Predictor MAE uses fixed 90/10 splits;
+optional Murcko-scaffold-group evaluation is provided as an evaluation-only script (Supporting Information).
 
-\subsection{Four-architecture 2D GNN ensemble}
-All property predictors operate directly on 2D molecular graphs built with
-RDKit~\cite{landrum2013rdkit}. Node features encode atomic number (including dummy
-attachment atom \texttt{*} for polymer repeating units), hybridisation, degree, hydrogen
-count, formal charge, aromaticity, and ring membership. Edge features encode bond order,
-conjugation, and ring membership. On each dataset we train four PyTorch~\cite{paszke2019pytorch}
-GNN architectures on the identical 90/10 split (seed~42, Smooth-L1 loss, AdamW, cosine schedule):
-\begin{itemize}
-  \item \textbf{\texttt{GINE}}~\cite{hu2020gine}: 4-layer edge-conditioned Graph Isomorphism Network with mean+max global pooling.
-  \item \textbf{\texttt{GATv2}}~\cite{brody2022gatv2}: 4-head edge-conditioned dynamic graph attention.
-  \item \textbf{\texttt{MPNN}}~\cite{gilmer2017mpnn}: weight-tied message passing with a GRU node-state update over 4 steps.
-  \item \textbf{\texttt{CARATE}}~\cite{kleber2021carate}: alternating GATv2 and GCN layers with gated attention readout concatenated with mean+max pooling.
-\end{itemize}
-Their unweighted mean forms the \textbf{4-GNN ensemble}. To detect reward hacking, every domain
-also trains an independent \textbf{Holdout ExtraTrees} regressor (seed~1337, Morgan count
-radius-3 + MACCS + domain descriptors) that never enters any training reward.
+\subsection{Software and hardware}
+Graphs are built with RDKit~\cite{landrum2013rdkit}; GNNs run in PyTorch~\cite{paszke2019pytorch}
+(\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, \texttt{CARATE}---see refs.~\cite{hu2020gine,brody2022gatv2,gilmer2017mpnn,kleber2021carate}).
+Generators: SELFIES GRU on ZINC250k~\cite{krenn2020selfies,sterling2015zinc15}; polymer P-SMILES GRU.
+Training and steering for the reported runs used one NVIDIA RTX~3060 GPU.
 
-\subsection{Generators, compliance gates, and REINVENT steering}
-For small molecules (UV-Vis and CNS), we use a 2-layer GRU over SELFIES~\cite{krenn2020selfies}
-pretrained on ZINC250k~\cite{sterling2015zinc15} (249{,}455 molecules). For polymers, we train a
-2-layer token-level GRU over P-SMILES repeating units (requiring exact RDKit parse validity and
-two degree-1 \texttt{*} attachment points). Policy-gradient fine-tuning uses the REINVENT
-augmented-likelihood objective~\cite{blaschke2020reinvent},
-$\mathcal{L} = \mathbb{E}[(\log p_{\mathrm{prior}}(x) + \sigma R(x) - \log p_{\mathrm{agent}}(x))^2]$,
-paired with duplicate-memory buckets and applicability-domain damping where needed.
-
-Regulatory compliance is enforced via explicit SMARTS rules covering REACH Annex~XIV/XVII
-chemical families (PFAS per OECD~2021, ortho-phthalate diesters, organotin compounds), extended
-with a bisphenol-A motif for polymers and RDKit PAINS filters~\cite{baell2010pains} plus CNS
-blood--brain-barrier bounds ($\mathrm{MW}\le 450$, $\mathrm{TPSA}\le 90\,\text{\AA}^2$,
-$\mathrm{HBD}\le 3$, $\mathrm{QED}\ge 0.55$~\cite{bickerton2012qed}) for pharmaceuticals.
-Non-compliant structures receive zero reward. Figure~\ref{fig:pipeline} summarises the unified four-stage pipeline.
+Figure~\ref{fig:pipeline} summarises data flow: decode $x\to G(x)$; apply $C(x)$; score
+$\hat{y}_{\mathrm{ens}}$; update $p_{\mathrm{agent}}$; audit with $\hat{y}_{\mathrm{hold}}$.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_pipeline.pdf}
-\caption{Unified compliance-conditioned generation pipeline across UV-Vis chromophores,
-engineering polymers, and central nervous system ligands. Hard regulatory and safety gates
-zero the reward of non-compliant candidates before 4-GNN ensemble scoring, while an
-independent ExtraTrees holdout audits reward hacking outside the training loop.}
+\caption{Compliance-conditioned generation: hard gates zero reward before ensemble GNN scoring;
+holdout ExtraTrees audits hacking outside the training loop.}
 \label{fig:pipeline}
 \end{figure}
 
 \section{Results}
 
 \subsection{Track 1: UV-Vis chromophores (400--450~nm)}
-Using the public experimental UV-Vis database of Joung et al.~\cite{joung2020uvvis}
-(6{,}425 chromophores, $n_{\mathrm{train}}=\MacroUvNtrain{}$, $n_{\mathrm{test}}=\MacroUvNtest{}$),
-every GNN outperforms the baseline Morgan-HGB surrogate (\MacroMorganMae{}~nm MAE), and the 4-GNN ensemble reaches
-\textbf{\MacroUvEnsMae{}~nm MAE} ($R^2=\MacroUvEnsRsq{}$, Table~\ref{tab:predictors}), beating the ExtraTrees holdout (\MacroUvHoldMae{}~nm).
-
-Table~\ref{tab:uvvis} traces steering progression across three prior seeds ($n=10{,}000$ fresh samples per seed).
-Prefix conditioning shifts in-band yield modestly. Round-3 REINVENT with a 60/40 blend of the
-4-GNN ensemble and Morgan-HGB raises 4-GNN in-band yield to \MacroUvGnnInband{}, matching the independent ExtraTrees holdout (\MacroUvEtInband{}) with $3.7\times$ lower cross-seed variance than a Morgan-only policy, $0.950$ uniqueness, $1.000$ novelty, and $0.983$ rule pass (Table~\ref{tab:uvvis}).
+Joung et al.'s UV-Vis database~\cite{joung2020uvvis} supplies
+$n_{\mathrm{train}}=\MacroUvNtrain{}$, $n_{\mathrm{test}}=\MacroUvNtest{}$.
+The 4-GNN ensemble reaches \textbf{\MacroUvEnsMae{}~nm MAE} ($R^2=\MacroUvEnsRsq{}$), below the
+holdout (\MacroUvHoldMae{}~nm) and Morgan baseline (\MacroMorganMae{}~nm) (Table~\ref{tab:predictors}).
+Table~\ref{tab:uvvis} gives $\phi_{[400,450]}$ with ensemble and holdout oracles across steering stages;
+Round-3 REINVENT with a 60/40 GNN--Morgan reward yields \MacroUvGnnInband{} (GNN) and
+\MacroUvEtInband{} (holdout), with lower cross-seed SD than Morgan-only training.
 
 \input{generated/tab_uvvis.tex}
-
-Snapshot evaluations every 200 RL steps (Figure~\ref{fig:curves}A) confirm that 4-GNN and independent Holdout ExtraTrees in-band yields rise together from step~0 to step~1{,}200 while uniqueness remains above $0.99$.
+\input{generated/tab_predictors.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_learning_curves.pdf}
-\caption{REINVENT learning curves across all three domains. (A)~UV-Vis 400--450~nm three-seed snapshot trajectory (512 samples per seed every 200 steps, mean $\pm$ SD, $n=3$ seeds). (B)~Plastics ($T_g$ 450--550~K) mean reward and high-reward fraction over 600 RL steps. (C)~CNS multi-objective safety REINVENT over 500 steps following the 8-epoch \texttt{5-HT1A} supervised warm-start.}
+\caption{Learning curves ($n=3$ seeds for panel A).}
 \label{fig:curves}
 \end{figure}
 
-\input{generated/tab_predictors.tex}
-
-\subsection{Track 2: Plastics --- REACH- and BPA-free engineering polymers (450--550~K)}
-We use the CC-BY-4.0 curated homopolymer $T_g$ dataset of Kunchapu and Jablonka~\cite{kunchapu2025tg}
-($N=\MacroCorpN{}$ RDKit-valid P-SMILES). Unlike ZINC250k, this corpus exhibits substantial
-regulatory tension: \textbf{\MacroCorpFailPct{}\%} (\MacroCorpFailN{} polymers) fail the combined
-REACH+BPA screen. On held-out test polymers ($n=737$), the 4-GNN ensemble achieves
-\textbf{\MacroPlEnsMae{}~K MAE} ($R^2=\MacroPlEnsRsq{}$, Table~\ref{tab:predictors}).
-
-After 600 steps of compliance-gated REINVENT targeting $T_g \in [450, 550]$~K
-(Table~\ref{tab:plastics}, $n=3{,}000$ samples), P-SMILES validity rises from \MacroPlValidPrior{} to \textbf{\MacroPlValidFinal{}}
-and REACH/BPA compliance from \MacroPlCompliancePrior{} to \textbf{0.9997}. In-band yield rises from \MacroPlInbandPriorGnn{} to \textbf{\MacroPlInbandGnn{}} (4-GNN) at $0.926$ uniqueness and $0.991$ novelty.
+\subsection{Track 2: Polymers ($T_g\in[450,550]$~K, REACH+BPA-free)}
+On Kunchapu--Jablonka PolyMetriX ($N=\MacroCorpN{}$)~\cite{kunchapu2025tg},
+\MacroCorpFailPct{}\% (\MacroCorpFailN{}) fail the combined screen (frozen count in
+\texttt{plastics/corpus\_compliance\_summary.json}). Hold-out ensemble MAE is
+\textbf{\MacroPlEnsMae{}~K} ($R^2=\MacroPlEnsRsq{}$). After compliance-gated REINVENT
+($n=3{,}000$), validity rises from \MacroPlValidPrior{} to \MacroPlValidFinal{} and compliance to
+\textbf{\MacroPlCompliance{}\%} (Table~\ref{tab:plastics}).
 
 \input{generated/tab_plastics.tex}
 
-\subsection{Track 3: Pharmaceuticals --- non-hallucinogenic CNS (\texttt{5-HT1A} vs.\ \texttt{5-HT2B} \& \texttt{hERG})}
-We extract single-protein pChEMBL records from ChEMBL~37~\cite{zdrazil2024chembl,gaulton2012chembl} for the
-non-hallucinogenic psychiatric target \texttt{5-HT1A} (\texttt{CHEMBL214}, 6{,}121 unique
-molecules) alongside cardiac safety anti-targets \texttt{5-HT2B} (\texttt{CHEMBL1833}) and
-\texttt{hERG} (\texttt{CHEMBL240}). Table~\ref{tab:pharma} reports fractions from $n=3{,}000$
-fresh samples per model checkpoint.
-
-Direct RL from the generic ZINC250k prior fails due to reward sparsity. An 8-epoch supervised
-warm-start resolves cold-start sparsity but exposes a selectivity trap; smooth additive
-multi-objective safety REINVENT without scaffold memory restores cardiac safety metrics yet drops
-uniqueness to \MacroCnsUniqSafety{}. Bemis--Murcko caps~\cite{bemis1996murcko} restore uniqueness to
-\textbf{\MacroCnsUniqMurcko{}} while maintaining joint all-criteria yield (Table~\ref{tab:pharma}).
+\subsection{Track 3: CNS (\texttt{5-HT1A} vs.\ \texttt{5-HT2B}, \texttt{hERG})}
+ChEMBL~37~\cite{zdrazil2024chembl,gaulton2012chembl} pChEMBL records define the endpoints.
+Table~\ref{tab:pharma} reports $n=3{,}000$ samples per checkpoint. Scaffold memory restores
+uniqueness from \MacroCnsUniqSafety{} to \textbf{\MacroCnsUniqMurcko{}} without collapsing joint yield.
 
 \input{generated/tab_pharma.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_cross_domain_summary.pdf}
-\caption{Cross-domain quantitative summary. (A)~Held-out $R^2$ of the GNN ensembles versus independent ExtraTrees across all five endpoints (Table~\ref{tab:predictors}). (B)~CNS selectivity trap after supervised warm-starting and multi-objective recovery (Table~\ref{tab:pharma}, $n=3{,}000$).}
+\caption{Cross-domain $R^2$ summary and CNS selectivity recovery.}
 \label{fig:summary}
 \end{figure}
 
-\subsection{Retrosynthetic accessibility and TD-DFT audit}
-To assess synthetic tractability beyond string validity, we evaluate Ertl--Schuffenhauer
-SA-Score~\cite{ertl2009sa} and RDKit BRICS retrosynthetic disconnection~\cite{degen2008brics}
-across all three domains (Table~\ref{tab:retro} and Figure~\ref{fig:dft_retro}B).
-
-To audit surrogate predictions against first-principles quantum chemistry, we sampled $n=50$
-novel REACH-compliant UV-Vis consensus candidates ($\le 30$ heavy atoms, all $\mathrm{SA}\le 4.0$),
-generated ETKDGv3/MMFF94 3D conformers, and ran gas-phase linear-response time-dependent DFT
-(TD-DFT) at the Tamm--Dancoff approximation with the B3LYP exchange-correlation functional and
-6-31G split-valence basis set, requesting three singlet roots, using PySCF~\cite{sun2016pyscf}
-(Figure~\ref{fig:dft_retro}A). No continuum solvation or vibronic broadening was applied;
-excitation energies are vertical gas-phase values appropriate for ranking chromophore plausibility
-rather than quantitative spectroscopy. All 46 charge-neutral, basis-supported structures converged
-($\MacroDftConvFrac{}\%$ of the 50-molecule pool). Converged candidates exhibit mean
-HOMO--LUMO gap $3.36 \pm 0.61$~eV and median $S_1 = 399.4$~nm. Overall, $30/46$ (\MacroDftVisFrac{}\%)
-absorb in the visible ($\ge 380$~nm). The \MacroDftMaeGnn{}~nm MAE between 4-GNN and gas-phase $S_1$
-quantifies the residual surrogate-to-quantum gap.
+\subsection{Retrosynthesis and TD-DFT audit}
+SA-Score and BRICS statistics appear in Table~\ref{tab:retro}~\cite{ertl2009sa,degen2008brics}.
+For $n=50$ chromophores we ran gas-phase TDA TD-DFT (B3LYP/6-31G, three singlets) in
+PySCF~\cite{sun2016pyscf}; \MacroDftConvFrac{}\% of the pool converged and \MacroDftVisFrac{}\%
+of converged structures have $S_1\ge 380$~nm.
 
 \input{generated/tab_retro.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_dft_retrosynth.pdf}
-\caption{Post-generation physical and synthetic audits. (A)~Gas-phase B3LYP/6-31G TD-DFT brightest vertical excitation versus oscillator strength across 46 converged UV-Vis candidates (median $S_1 = 399.4$~nm). (B)~SA-Score ($\le 4.0$) and BRICS pass rates across domains (Table~\ref{tab:retro}).}
+\caption{TD-DFT $S_1$ vs.\ oscillator strength and SA/BRICS pass rates.}
 \label{fig:dft_retro}
 \end{figure}
 
-\section{Discussion and Limitations}
-Three consistent findings emerge across optical, polymer, and CNS design. Graph ensembles
-outperform fingerprint trees on conjugation-sensitive and receptor-binding endpoints; hard
-compliance gates reach $>98$--$99.9\%$ pass rates with high target yield; and scaffold-aware RL
-recovers uniqueness after multi-objective safety fine-tuning.
+\section{Discussion}
 
-Scope boundaries include surrogate versus experimental measurement, SMARTS pattern screens
-versus formal regulatory clearance, SA-Score heuristics versus bench synthesis, and the absence
-of published-method baselines (REINVENT~4, GraphGA, filter-after-generation) in the present
-numeric comparison---runnable scripts and oracle budgets are included for follow-up experiments.
+The same formal operators $(C,R,\mathcal{L})$ instantiate three chemistries without changing the
+evaluation layer: holdout oracles move with ensemble rewards in UV-Vis, compliance saturates under
+hard gates in polymers, and multi-objective CNS RL exposes a selectivity trap remedied by scaffold
+caps. Limits: SMARTS screens are not legal clearance; surrogates are not experiments; published
+baselines (REINVENT~4, GraphGA, filter-after-generation) are scripted but not numerically compared
+in this revision.
 
-\section*{Data and Software Availability Statement (JCIM)}
-All custom code, SMARTS compliance rules, evaluation JSON, and figure-generation scripts are
-available at \url{https://github.com/cap-jmk-real/compliance-conditioned-molgen} (commit pinned
-in the repository README at submission time). No new experimental raw data were generated.
-Public training corpora: ZINC250k~\cite{sterling2015zinc15}, Joung UV-Vis~\cite{joung2020uvvis},
-PolyMetriX curated $T_g$~\cite{kunchapu2025tg}, and ChEMBL~37~\cite{zdrazil2024chembl}. Headline
-metrics are regenerated from committed result files via
-\texttt{paper\_3domain/scripts/generate\_paper\_artifacts.py}; continuous integration executes
-\texttt{tests/test\_paper\_generated\_drift.py} to detect manuscript--artifact drift.
+\section*{Acknowledgment}
 
-\section*{Conflicts of interest}
-The author declares no conflict of interest.
+The author used AI coding and writing assistants (Cursor, Grok Bot, Hermes Agent, Antigravity,
+SciSpace) for code, literature search, and drafting; research questions, implementation choices,
+and numeric verification against archived JSON remain the author's responsibility.
 
-\bibliography{refs}
+\section*{Availability of data and code}
+
+Source code, SMARTS rules, result JSON, and figure scripts:
+\url{https://github.com/cap-jmk-real/compliance-conditioned-molgen}.
+Public corpora: ZINC250k, Joung UV-Vis, PolyMetriX $T_g$, ChEMBL~37 (citations above).
+Regenerate manuscript tables with
+\texttt{paper\_3domain/scripts/generate\_paper\_artifacts.py}; drift is checked by
+\texttt{tests/test\_paper\_generated\_drift.py}.
+
+\printbibliography[heading=bibintoc,title={References}]
 
 \end{document}
