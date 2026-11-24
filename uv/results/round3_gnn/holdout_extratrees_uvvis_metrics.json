@@ -1,0 +1,10 @@
+{
+  "model": "morgan_count_r3_1024+maccs+conj_descriptors_extratrees",
+  "seed": 1337,
+  "n_train": 5782,
+  "n_test": 643,
+  "mae_nm": 18.50082810447883,
+  "rmse_nm": 28.394024974112714,
+  "r2": 0.9280174235704403,
+  "note": "same chromophore database as the surrogate; different features, learner, seed and split"
+}

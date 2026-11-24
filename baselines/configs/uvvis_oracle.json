@@ -1,0 +1,9 @@
+{
+  "description": "Placeholder oracle spec for REINVENT4 baseline: map to 4-GNN + Morgan blend and REACH screen.",
+  "band_nm": [400, 450],
+  "reward_blend": {
+    "gnn_ensemble_weight": 0.6,
+    "morgan_hgb_weight": 0.4
+  },
+  "compliance": "smarts_rules.py + RDKit parse validity"
+}

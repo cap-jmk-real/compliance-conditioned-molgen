@@ -1,0 +1,114 @@
+{
+  "provenance": "Held-out test metrics from the same 90/10 splits (seed 42 for GNNs; seed 1337 for Holdout ExtraTrees) used during the original GPU training runs; per-architecture JSON for UV-Vis is in uv/results/round3_gnn/.",
+  "uvvis": {
+    "n_test": 643,
+    "n_train": 5782,
+    "unit": "nm",
+    "morgan_hgb_mae": {
+      "file": "uv/artifacts/predictor_metrics.json",
+      "path": "mae_nm",
+      "round": 2
+    },
+    "gine": {
+      "file": "uv/results/round3_gnn/gnn_uvvis_metrics.json",
+      "path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "gatv2": {
+      "file": "uv/results/round3_gnn/gnn_gatv2_uvvis_metrics.json",
+      "path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "mpnn": {
+      "file": "uv/results/round3_gnn/gnn_mpnn_uvvis_metrics.json",
+      "path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "carate": {
+      "file": "uv/results/round3_gnn/gnn_carate_uvvis_metrics.json",
+      "path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "ensemble_4gnn": {
+      "file": "uv/results/round3_gnn/ensemble_uvvis_test_metrics.json",
+      "mae_path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "holdout_et": {
+      "file": "uv/results/round3_gnn/holdout_extratrees_uvvis_metrics.json",
+      "path": "mae_nm",
+      "r2_path": "r2",
+      "round_mae": 2,
+      "round_r2": 3
+    }
+  },
+  "polymer": {
+    "n_test": 737,
+    "n_corpus": 7367,
+    "unit": "K",
+    "gine_mae": 22.1,
+    "gatv2_mae": 22.88,
+    "mpnn_mae": 22.86,
+    "carate_mae": 22.56,
+    "ensemble_4gnn": {
+      "file": "plastics/track_b_summary.json",
+      "path": "gnn_ensemble_test.mae_K",
+      "r2_path": "gnn_ensemble_test.r2",
+      "round_mae": 2,
+      "round_r2": 3
+    },
+    "holdout_et": {
+      "file": "plastics/track_b_summary.json",
+      "path": "holdout_et_test.mae_K",
+      "r2_path": "holdout_et_test.r2",
+      "round_mae": 2,
+      "round_r2": 3
+    }
+  },
+  "cns": {
+    "5ht1a": {
+      "n_test": 613,
+      "gine_mae": 0.53,
+      "gatv2_mae": 0.502,
+      "mpnn_mae": 0.502,
+      "carate_mae": 0.525,
+      "ensemble_4gnn_mae": 0.487,
+      "ensemble_r2": 0.687,
+      "holdout_et_mae": 0.698,
+      "holdout_r2": 0.35
+    },
+    "5ht2b": {
+      "n_test": 237,
+      "gine_mae": 0.572,
+      "gatv2_mae": 0.535,
+      "carate_mae": 0.54,
+      "ensemble_3gnn_mae": 0.527,
+      "ensemble_r2": 0.46,
+      "holdout_et_mae": 0.654,
+      "holdout_r2": 0.094
+    },
+    "herg": {
+      "n_test": 1008,
+      "gine_mae": 0.394,
+      "gatv2_mae": 0.394,
+      "carate_mae": 0.393,
+      "ensemble_3gnn_mae": 0.373,
+      "ensemble_r2": 0.617,
+      "holdout_et_mae": 0.547,
+      "holdout_r2": 0.286
+    }
+  },
+  "polymer_corpus_compliance": {
+    "file": "plastics/corpus_compliance_summary.json"
+  }
+}
