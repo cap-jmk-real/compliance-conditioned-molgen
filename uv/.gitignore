@@ -8,6 +8,7 @@ artifacts/predictor_smoke_metrics.json
 artifacts/eval_smoke.json
 artifacts/eval_smoke.md
 data/corpus*.csv
+results/round3_gnn/checkpoints/
 data/uvvis_calib.csv
 data/uvvis_smoke.csv
 __pycache__/

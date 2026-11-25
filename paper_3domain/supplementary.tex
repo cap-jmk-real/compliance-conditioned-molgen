@@ -1,0 +1,24 @@
+\documentclass[12pt]{article}
+\usepackage{match}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+\title{Supporting Information\\\large Compliance-conditioned molecular generation (MATCH submission)}
+\author{Julian M. Kleber}
+\received{November 19, 2026}
+\begin{document}
+\maketitle
+
+\section*{S1. Software versions}
+Python~3.12; PyTorch and RDKit versions in repository \texttt{requirements.txt}.
+
+\section*{S2. Generated tables and drift test}
+\texttt{paper\_3domain/scripts/generate\_paper\_artifacts.py} writes \texttt{paper\_3domain/generated/};
+\texttt{tests/test\_paper\_generated\_drift.py} guards against manuscript--artifact drift.
+
+\section*{S3. Scaffold-split evaluation}
+\texttt{paper\_3domain/scripts/scaffold\_split\_eval.py} (evaluation-only; requires GNN checkpoints).
+
+\section*{S4. External baselines}
+Scripts under \texttt{baselines/}; oracle budgets in \texttt{baselines/README.md}.
+
+\end{document}

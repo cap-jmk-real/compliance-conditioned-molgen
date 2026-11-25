@@ -1,0 +1,11 @@
+{
+  "model": "4-GNN unweighted mean (GINE+GATv2+MPNN+CARATE)",
+  "seed": 42,
+  "n_train": 5782,
+  "n_test": 643,
+  "mae_nm": 17.48,
+  "rmse_nm": 29.95,
+  "r2": 0.9221,
+  "source": "same 90/10 split and training run as per-architecture metrics in gnn_*_uvvis_metrics.json",
+  "regenerate": "paper_3domain/scripts/eval_uvvis_gnn_ensemble.py with checkpoints under uv/results/round3_gnn/checkpoints/"
+}

@@ -1,0 +1,54 @@
+% Simplified layout matching the official MATCH LaTeX template
+% (see https://match.pmf.kg.ac.rs/prepare.html and Overleaf MATCH template, CC BY 4.0).
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{match}[2026/11/24 MATCH Commun. Math. Comput. Chem. layout]
+
+\RequirePackage[margin=2.4cm]{geometry}
+\RequirePackage{mathptmx}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{graphicx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{caption}
+\RequirePackage{url}
+\RequirePackage{fancyhdr}
+
+\pagestyle{myheadings}
+\markboth{\textit{MATCH Commun. Math. Comput. Chem.}}{\textit{MATCH Commun. Math. Comput. Chem.}}
+
+\newcommand{\matchvol}{00}
+\newcommand{\matchyear}{2026}
+\newcommand{\matchfirstpage}{1}
+\newcommand{\matchlastpage}{??}
+\newcommand{\matchdoi}{10.46793/match.00-00.xxxxx}
+
+\newcommand{\MATCHjournalhead}{%
+  \noindent\textbf{MATCH Commun. Math. Comput. Chem.} \matchvol\ (\matchyear) \matchfirstpage--\matchlastpage%
+  \quad ISSN: 0340--6253\quad doi: \matchdoi\par\vspace{0.6em}}
+
+\newcounter{matchauthor}
+\newcommand{\matchauthor}[2]{%
+  \stepcounter{matchauthor}\textsuperscript{\alph{matchauthor}}#1%
+  \ifx\relax#2\relax\else\textsuperscript{,*}#2\fi}
+
+\newcommand{\matchaddress}[1]{\textsuperscript{\alph{matchaddress}}#1}
+
+\newcommand{\received}[1]{\par\noindent(Received #1)\par\vspace{0.5em}}
+
+\newcommand{\matchkeywords}[1]{\par\noindent\textbf{Keywords:} #1\par\vspace{0.8em}}
+
+\makeatletter
+\def\@maketitle{%
+  \MATCHjournalhead
+  \begin{center}
+    {\LARGE\bfseries\@title\par}
+    \vspace{1.0em}
+    {\large\@author\par}
+    \vspace{0.6em}
+    {\normalsize\@thanks\par}
+  \end{center}
+  \vspace{0.5em}}
+\makeatother
+
+\captionsetup{font=small,labelfont=bf,labelformat=empty,figurename=Fig.,tablename=Table}
+
+\endinput

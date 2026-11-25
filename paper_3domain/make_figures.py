@@ -37,7 +37,7 @@ mpl.rcParams.update({
     "ps.fonttype": 42,
 })
 
-OUT_DIR = Path("/home/s4il0r/t25-metasearch/paper_worktree/paper_3domain")
+OUT_DIR = Path(__file__).resolve().parent
 
 
 def make_pipeline_diagram() -> None:

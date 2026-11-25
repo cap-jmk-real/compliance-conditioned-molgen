@@ -1,0 +1,11 @@
+{
+  "generator": "paper_3domain/scripts/generate_paper_artifacts.py",
+  "files": {
+    "macros.tex": "a80c3f3c9036257ca397ab1309f2e0e7a82bd7770c4e1719eabb0fd606c09dcb",
+    "tab_predictors.tex": "4037bbdba43a570357b6f9a3f7e87e7e9383717c7b45879a7081b43b6d92e949",
+    "tab_uvvis.tex": "3bbcdabb4b313196e93518c5285f84997fd3ae0a388110a38e369a55388e2a01",
+    "tab_plastics.tex": "901924e84ee236c31144b24d0f6dd49d78113fb701187f38b4630e09e4af4301",
+    "tab_pharma.tex": "2cda0c9a0521b77d3611b3bcd27c78132789e259b1c5daec5936e0a5c960f54a",
+    "tab_retro.tex": "2e9ac383cc7c546a56a65046944985140dd33346d02f533b1105bd25bb571323"
+  }
+}

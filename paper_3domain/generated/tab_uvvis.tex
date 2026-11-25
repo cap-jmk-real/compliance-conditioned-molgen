@@ -1,0 +1,21 @@
+% Auto-generated — do not edit.
+\begin{table}[t]
+\centering
+\caption{Track 1 (UV-Vis 400--450~nm): in-band fraction $\phi_{[400,450]}$ by audit oracle. Final row: three prior seeds, 10{,}000 samples each (mean $\pm$ SD). Holdout ExtraTrees never enters training rewards.}
+\label{tab:uvvis}
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Method & Holdout ET & Ens.\ 4-GNN & \texttt{GINE} only & Morgan-HGB & Uniq. & Rule & Int.\ div. \\
+\midrule
+Plain ZINC250k prior & 0.191 & -- & 0.078 & 0.185 $\pm$ 0.006 & 1.000 & 0.963 & 0.886 \\
+Prefix conditioning & 0.231 & -- & -- & 0.252 $\pm$ 0.004 & 1.000 & 0.999 & 0.885 \\
+REINVENT Round~2 (\texttt{a29221}) & 0.543$\pm$0.049 & -- & -- & 0.598$\pm$0.015 & 0.986$\pm$0.005 & 0.999$\pm$0.001 & 0.799$\pm$0.012 \\
+REINVENT Round~3 (\texttt{403657}, Morgan) & 0.728$\pm$0.093 & -- & 0.514 & 0.512 $\pm$ 0.038 & 0.950 $\pm$ 0.010 & 0.983 $\pm$ 0.004 & 0.799 $\pm$ 0.010 \\
+\textbf{REINVENT 4-GNN + Morgan (\texttt{403657})} & \textbf{0.702 $\pm$ 0.025} & \textbf{0.720 $\pm$ 0.037} & -- & 0.512 $\pm$ 0.038 & \textbf{0.950 $\pm$ 0.010} & \textbf{0.983 $\pm$ 0.004} & 0.799 $\pm$ 0.010 \\
+\bottomrule
+\multicolumn{8}{@{}l}{\footnotesize \texttt{GINE}-only column: $n=3{,}000$, prior seed~1 (\texttt{uvvis\_steering\_progression.json}). Post-hoc 4-GNN ensemble scoring uses the three-seed 10{,}000-sample protocol (\texttt{4gnn\_ensemble\_summary.json}). Validity and novelty are 1.000 across REINVENT runs.}
+\end{tabular}
+}
+\end{table}

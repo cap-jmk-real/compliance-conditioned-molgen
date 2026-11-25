@@ -1,0 +1,35 @@
+{
+  "source_files": [
+    "uv/results/aggregate_rtx3060_seeds012.json",
+    "uv/results/round3_gnn/4gnn_ensemble_summary.json",
+    "uv/results/round3_gnn/round2_seeds.md"
+  ],
+  "plain_zinc250k_prior": {
+    "holdout_et_inband": 0.191,
+    "gnn_gine_inband_a": 0.078,
+    "morgan_inband_mean_sd": {
+      "file": "uv/results/aggregate_rtx3060_seeds012.json",
+      "mean_path": "per_metric.in_band_fraction.plain.mean",
+      "sd_path": "per_metric.in_band_fraction.plain.sd"
+    },
+    "rule_pass": 0.963,
+    "int_div": 0.886
+  },
+  "prefix_conditioning": {
+    "holdout_et_inband": 0.231,
+    "morgan_inband_mean_sd": {
+      "file": "uv/results/aggregate_rtx3060_seeds012.json",
+      "mean_path": "per_metric.in_band_fraction.steered.mean",
+      "sd_path": "per_metric.in_band_fraction.steered.sd"
+    },
+    "rule_pass": 0.999,
+    "int_div": 0.885
+  },
+  "reinvent_round2_a29221": {
+    "holdout_mean_sd": [0.543, 0.049],
+    "morgan_mean_sd": [0.598, 0.015],
+    "uniqueness_mean_sd": [0.986, 0.005],
+    "rule_mean_sd": [0.999, 0.001],
+    "int_div_mean_sd": [0.799, 0.012]
+  }
+}

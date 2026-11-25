@@ -1,0 +1,8 @@
+{
+  "corpus_n": 7367,
+  "fail_count": 1110,
+  "fail_fraction": 0.1507,
+  "tallies_note": "863 PFAS, 519 BPA motifs, 7 organotin, 4 ortho-phthalates (overlapping motifs).",
+  "regenerate": "plastics/compute_corpus_compliance.py with Zenodo CSV",
+  "source": "Track 2 training corpus screening log"
+}
