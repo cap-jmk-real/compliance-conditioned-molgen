@@ -89,10 +89,13 @@ and $C(x)=0$ otherwise. Non-compliant candidates are removed from the reward sup
 $R(x)=0$ if $C(x)=0$.
 
 \paragraph{Property predictors.} For target property $y$ (e.g.\ $\lambda_{\max}$, $T_g$, pChEMBL),
-let $\hat{y}_{\mathrm{ens}}(x)$ be the unweighted mean of four GNN regressors trained on a fixed
-90/10 split (seed~42). Let $\hat{y}_{\mathrm{hold}}(x)$ be an independent ExtraTrees model on
-different features and split seed (1337). Only $\hat{y}_{\mathrm{ens}}$ (and optionally a legacy
-Morgan gradient-boosted surrogate) enters $R(x)$; $\hat{y}_{\mathrm{hold}}$ is used in evaluation only.
+let $\hat{y}_{\mathrm{ens}}(x)$ be the unweighted mean of GNN regressors trained on a fixed
+90/10 split (seed~42): four architectures for UV-Vis, polymer $T_g$, and \texttt{5-HT1A}; a
+three-architecture ensemble (\texttt{GINE}+\texttt{GATv2}+\texttt{CARATE}) for \texttt{5-HT2B} and
+\texttt{hERG} (MPNN omitted on these targets, Table~\ref{tab:predictors}). Let
+$\hat{y}_{\mathrm{hold}}(x)$ be an independent ExtraTrees model on different features and split
+seed (1337). Only $\hat{y}_{\mathrm{ens}}$ (and optionally a legacy Morgan gradient-boosted
+surrogate) enters $R(x)$; $\hat{y}_{\mathrm{hold}}$ is used in evaluation only.
 
 \paragraph{Band and multi-objective scores.} For a band $[a,b]$ (UV-Vis nanometres or $T_g$ in kelvin),
 \begin{equation}
@@ -108,9 +111,16 @@ the augmented-likelihood objective~\cite{blaschke2020reinvent} minimises
 \mathcal{L}=\mathbb{E}_{x\sim p_{\mathrm{agent}}}
 \Bigl[\bigl(\log p_{\mathrm{prior}}(x) + \sigma R(x) - \log p_{\mathrm{agent}}(x)\bigr)^2\Bigr],
 \end{equation}
-where $\sigma>0$ scales the reward. In practice $R(x)$ blends ensemble and Morgan terms for UV-Vis
-and applies multi-objective scalarisation for CNS after supervised warm-starting. Duplicate-memory and
-Murcko-scaffold caps modify the \emph{sampling} distribution without changing the formal definition of $R$.
+where $\sigma>0$ scales the reward. Domain-specific constructions (repository scripts cited below):
+UV-Vis REINVENT uses a 60/40 unnormalised blend of 4-GNN band indicator and Morgan-HGB band score
+(\texttt{baselines/configs/uvvis\_oracle.json}); $\sigma=40$, step budget 1200 for trial
+\texttt{reinvent-403657} (\texttt{uv/results/round3\_gnn/round3\_results.md}). Polymers gate on
+compliance then band-reward on $\hat{T}_g$ from the ensemble (\texttt{plastics/run\_plastics\_track\_b.py}).
+CNS safety REINVENT (\texttt{pharma/run\_pharma\_cns\_v2.py}, \texttt{v3.py}) sets $R=0$ unless
+REACH/PAINS and BBB pass, then $R=(0.45\,s_{\mathrm{1A}}+0.25\,s_{2\mathrm{B}}+0.20\,s_{\mathrm{hERG}}+0.10\,\mathrm{QED})\times c_{\mathrm{CNS}}$,
+with clipped pChEMBL-shaped terms $s_{\cdot}$ and $c_{\mathrm{CNS}}\in\{0.4,1\}$ from partial 5-HT1A
+threshold satisfaction; $\sigma=30$, 500 steps. Murcko scaffold buckets (cap 15) and duplicate-memory
+caps filter proposals during CNS v3 without altering the reward formula above.
 
 \paragraph{Evaluation functionals.} On a post-training sample of size $n$, report e.g.\ the in-band
 fraction
@@ -130,11 +140,27 @@ Student's $t$-test ($\mathrm{df}=2$) on differences (artifact
 \texttt{uv/results/aggregate\_rtx3060\_seeds012.json}). Predictor MAE uses fixed 90/10 splits;
 optional Murcko-scaffold-group evaluation is provided as an evaluation-only script (Supporting Information).
 
+\subsection{Predictor and generator training}
+GNN regressors (\texttt{uv/gnn\_predictor.py} and domain analogues): four layers, hidden width 128,
+Smooth-L1 ($\beta{=}0.5$) loss, AdamW (lr $10^{-3}$, weight decay $10^{-4}$), cosine schedule, 60 epochs,
+batch 128, checkpoint at lowest validation MAE; Morgan-HGB baseline: radius-3 Morgan count (2048 bits)
+with \texttt{HistGradientBoostingRegressor} on the same 90/10 split (\texttt{uv/artifacts/predictor\_metrics.json}).
+Holdout ExtraTrees: Morgan $r{=}3$ + MACCS + RDKit 2D descriptors, \texttt{max\_features=0.8},
+\texttt{n\_estimators=500}, seed 1337. UV-Vis steering meta-search: successive halving over REINVENT
+hyperparameters with surrogate in-band as the ranking score and documented gates on validity,
+uniqueness, and holdout gap (\texttt{uv/STEERING\_PLAN.md}, \texttt{uv/results/round3\_gnn/round3\_results.md});
+holdout ExtraTrees scores were inspected for promotion but were not folded into the training reward.
+ChEMBL pChEMBL records use the repository extraction scripts with per-target deduplication at the
+canonical SMILES level with median pChEMBL aggregation (\texttt{pharma/fetch\_chembl\_cns.py}).
+
 \subsection{Software and hardware}
 Graphs are built with RDKit~\cite{landrum2013rdkit}; GNNs run in PyTorch~\cite{paszke2019pytorch}
 (\texttt{GINE}, \texttt{GATv2}, \texttt{MPNN}, \texttt{CARATE}---see refs.~\cite{hu2020gine,brody2022gatv2,gilmer2017mpnn,kleber2021carate}).
 Generators: SELFIES GRU on ZINC250k~\cite{krenn2020selfies,sterling2015zinc15}; polymer P-SMILES GRU.
-Training and steering for the reported runs used one NVIDIA RTX~3060 GPU.
+Training and steering for the reported runs used one NVIDIA RTX~3060 GPU; the $n{=}50$ TD-DFT audit
+consumed $\approx\!2.4\times 10^{3}$~s wall time on CPU (\texttt{dft\_validation/dft\_50\_summary.json}). The TD-DFT pool SMILES and indices are archived with the results
+(\texttt{dft\_validation/dft\_50\_results.csv}); conformers use
+ETKDGv3 with \texttt{randomSeed}$=42{+}\mathrm{idx}$ per row (\texttt{dft\_validation/run\_dft\_50.py}).
 
 Figure~\ref{fig:pipeline} summarises data flow: decode $x\to G(x)$; apply $C(x)$; score
 $\hat{y}_{\mathrm{ens}}$; update $p_{\mathrm{agent}}$; audit with $\hat{y}_{\mathrm{hold}}$.
@@ -152,11 +178,14 @@ holdout ExtraTrees audits hacking outside the training loop.}
 \subsection{Track 1: UV-Vis chromophores (400--450~nm)}
 Joung et al.'s UV-Vis database~\cite{joung2020uvvis} supplies
 $n_{\mathrm{train}}=\MacroUvNtrain{}$, $n_{\mathrm{test}}=\MacroUvNtest{}$.
-The 4-GNN ensemble reaches \textbf{\MacroUvEnsMae{}~nm MAE} ($R^2=\MacroUvEnsRsq{}$), below the
-holdout (\MacroUvHoldMae{}~nm) and Morgan baseline (\MacroMorganMae{}~nm) (Table~\ref{tab:predictors}).
-Table~\ref{tab:uvvis} gives $\phi_{[400,450]}$ with ensemble and holdout oracles across steering stages;
-Round-3 REINVENT with a 60/40 GNN--Morgan reward yields \MacroUvGnnInband{} (GNN) and
-\MacroUvEtInband{} (holdout), with lower cross-seed SD than Morgan-only training.
+On held-out UV-Vis test molecules the 4-GNN ensemble attains the lowest MAE,
+\textbf{\MacroUvEnsMae{}~nm} ($R^2=\MacroUvEnsRsq{}$), versus holdout ExtraTrees (\MacroUvHoldMae{}~nm,
+$R^2{=}0.928$) and Morgan-HGB (\MacroMorganMae{}~nm) (Table~\ref{tab:predictors}).
+Table~\ref{tab:uvvis} gives $\phi_{[400,450]}$ under matched audit oracles; the final
+60/40 GNN--Morgan-trained checkpoint (\texttt{403657}) scores \MacroUvGnnInband{} under post-hoc
+4-GNN evaluation and \MacroUvEtInband{} under holdout ExtraTrees (numerically close means across
+$n{=}3$ prior seeds; not an equivalence test), with lower cross-seed SD than the Morgan-only
+training row.
 
 \input{generated/tab_uvvis.tex}
 \input{generated/tab_predictors.tex}
@@ -173,37 +202,51 @@ On Kunchapu--Jablonka PolyMetriX ($N=\MacroCorpN{}$)~\cite{kunchapu2025tg},
 \MacroCorpFailPct{}\% (\MacroCorpFailN{}) fail the combined screen (frozen count in
 \texttt{plastics/corpus\_compliance\_summary.json}). Hold-out ensemble MAE is
 \textbf{\MacroPlEnsMae{}~K} ($R^2=\MacroPlEnsRsq{}$). After compliance-gated REINVENT
-($n=3{,}000$), validity rises from \MacroPlValidPrior{} to \MacroPlValidFinal{} and compliance to
-\textbf{\MacroPlCompliance{}\%} (Table~\ref{tab:plastics}).
+($n=3{,}000$, single RL seed), validity rises from \MacroPlValidPrior{} to \MacroPlValidFinal{} and
+compliance to \textbf{\MacroPlCompliance{}\%}. Target-band yield rises $\approx 4.0\times$ under the
+4-GNN ensemble ($\MacroPlHoldInbandGnn$ $\to$ $\MacroPlHoldInbandGnnFin$) and
+$\approx 2.7\times$ under holdout ExtraTrees ($\MacroPlHoldInbandEt$ $\to$ $\MacroPlHoldInbandEtFin$)
+(Table~\ref{tab:plastics}).
 
 \input{generated/tab_plastics.tex}
 
-\subsection{Track 3: CNS (\texttt{5-HT1A} vs.\ \texttt{5-HT2B}, \texttt{hERG})}
-ChEMBL~37~\cite{zdrazil2024chembl,gaulton2012chembl} pChEMBL records define the endpoints.
-Table~\ref{tab:pharma} reports $n=3{,}000$ samples per checkpoint. Scaffold memory restores
-uniqueness from \MacroCnsUniqSafety{} to \textbf{\MacroCnsUniqMurcko{}} without collapsing joint yield.
+\subsection{Track 3: CNS design toward \texttt{5-HT1A} with cardiac anti-target screens}
+ChEMBL~37~\cite{zdrazil2024chembl,gaulton2012chembl} pChEMBL records define the \emph{in silico}
+endpoints; we do not measure hallucinogenic or \texttt{5-HT2A} liability here.
+Table~\ref{tab:pharma} reports $n=3{,}000$ post-training samples per checkpoint (single RL seed each).
+Safety REINVENT without scaffold memory raises predicted 5-HT2B/hERG pass rates to
+\MacroCns5ht2bNoMem{} / \MacroCnsHergNoMem{} but uniqueness falls to \MacroCnsUniqSafety{}.
+Adding Murcko scaffold buckets restores uniqueness to \textbf{\MacroCnsUniqMurcko{}} while
+\textbf{reducing} those pass rates to \MacroCns5ht2bMem{} / \MacroCnsHergMem{}---a diversity--safety
+trade-off rather than simultaneous resolution of mode collapse and cardiac-safety rates.
 
 \input{generated/tab_pharma.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_cross_domain_summary.pdf}
-\caption{Cross-domain $R^2$ summary and CNS selectivity recovery.}
+\caption{Cross-domain held-out $R^2$ summary and CNS uniqueness--safety trade-off.}
 \label{fig:summary}
 \end{figure}
 
 \subsection{Retrosynthesis and TD-DFT audit}
-SA-Score and BRICS statistics appear in Table~\ref{tab:retro}~\cite{ertl2009sa,degen2008brics}.
+SA-Score and BRICS heuristics (not validated routes) appear in Table~\ref{tab:retro}~\cite{ertl2009sa,degen2008brics};
+pool-specific pass fractions differ (e.g.\ $100\%$ SA$\le 4.0$ on Me-capped polymer repeats vs.\ $70\%$
+on the top-10 CNS consensus set).
 For $n=50$ chromophores we ran gas-phase TDA TD-DFT (B3LYP/6-31G, three singlets) in
-PySCF~\cite{sun2016pyscf}; \MacroDftConvFrac{}\% of the pool converged and \MacroDftVisFrac{}\%
-of converged structures have $S_1\ge 380$~nm.
+PySCF~\cite{sun2016pyscf}. \MacroDftConvFrac{}\% of the sampled pool converged (46/50 eligible;
+46/46 attempted succeeded). Among converged structures, \MacroDftS1Ge380Cnt{}/\MacroDftS1Ge380Of{}
+have calculated $S_1$ wavelengths in 380--750~nm (including dark $n\!\to\!\pi^*$ states);
+\MacroDftS1In400450Cnt{}/\MacroDftS1Ge380Of{} fall in the generation target 400--450~nm and
+\MacroDftBrightCnt{} show bright transitions ($f\ge 0.05$) in 380--470~nm (Figure~\ref{fig:dft_retro} plots
+brightest-state $\lambda$, not $S_1$).
 
 \input{generated/tab_retro.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_dft_retrosynth.pdf}
-\caption{TD-DFT $S_1$ vs.\ oscillator strength and SA/BRICS pass rates.}
+\caption{Gas-phase brightest TDA excitation vs.\ $f$ (left; median $S_1$ marked) and SA/BRICS heuristics (right).}
 \label{fig:dft_retro}
 \end{figure}
 
@@ -211,8 +254,8 @@ of converged structures have $S_1\ge 380$~nm.
 
 The same formal operators $(C,R,\mathcal{L})$ instantiate three chemistries without changing the
 evaluation layer: holdout oracles move with ensemble rewards in UV-Vis, compliance saturates under
-hard gates in polymers, and multi-objective CNS RL exposes a selectivity trap remedied by scaffold
-caps. Limits: SMARTS screens are not legal clearance; surrogates are not experiments; published
+hard gates in polymers, and multi-objective CNS RL exposes a uniqueness--cardiac-safety trade-off when
+Murcko memory is added. Limits: SMARTS screens are not legal clearance; surrogates are not experiments; published
 baselines (REINVENT~4, GraphGA, filter-after-generation) are scripted but not numerically compared
 in this revision.
 

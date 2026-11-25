@@ -1,11 +1,11 @@
 {
   "generator": "paper_3domain/scripts/generate_paper_artifacts.py",
   "files": {
-    "macros.tex": "4c74fd977cf85a75f37a53cd4b6951355c3008d5fe25527dd007f27d7953ebb6",
-    "tab_predictors.tex": "8dfa3a82f6f2a88216ba0614bfae7abb6eaa749fba955fe7729f088665bbf85f",
-    "tab_uvvis.tex": "5ca798cb39530abf575673ecec4d7434491376131a0f0eba15e4210e474346c1",
-    "tab_plastics.tex": "e708c79758ab9d0578b3570e1d3611895db622ed0775c47768ffc51e781d9f5e",
-    "tab_pharma.tex": "7f41864aee20b6ebe1ee2ee450e58872ff63ec2e357d6551300d7d7848824f7a",
+    "macros.tex": "a80c3f3c9036257ca397ab1309f2e0e7a82bd7770c4e1719eabb0fd606c09dcb",
+    "tab_predictors.tex": "4037bbdba43a570357b6f9a3f7e87e7e9383717c7b45879a7081b43b6d92e949",
+    "tab_uvvis.tex": "3bbcdabb4b313196e93518c5285f84997fd3ae0a388110a38e369a55388e2a01",
+    "tab_plastics.tex": "901924e84ee236c31144b24d0f6dd49d78113fb701187f38b4630e09e4af4301",
+    "tab_pharma.tex": "2cda0c9a0521b77d3611b3bcd27c78132789e259b1c5daec5936e0a5c960f54a",
     "tab_retro.tex": "2e9ac383cc7c546a56a65046944985140dd33346d02f533b1105bd25bb571323"
   }
 }

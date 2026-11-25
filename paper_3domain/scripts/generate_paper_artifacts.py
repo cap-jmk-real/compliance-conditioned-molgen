@@ -67,6 +67,7 @@ def build_macros() -> str:
     dft = _load("dft_validation/dft_50_summary.json")
     retro = _load("dft_validation/retrosynth_audit.json")
     corp = _load(pm["polymer_corpus_compliance"]["file"])
+    nc = dft["n_converged"]
 
     z = ph["cns_safe_reinvent_v3_scaffold"]
     murcko = z
@@ -95,9 +96,20 @@ def build_macros() -> str:
         f"\\newcommand{{\\MacroCorpN}}{{{corp['corpus_n']:,}}}".replace(",", "{,}"),
         f"\\newcommand{{\\MacroCnsUniqMurcko}}{{{_r(murcko['uniqueness'], 3)}}}",
         f"\\newcommand{{\\MacroCnsUniqSafety}}{{{_r(safety_v2['uniqueness'], 3)}}}",
-        f"\\newcommand{{\\MacroDftVisFrac}}{{{_pct(dft['s1_ge_380_vis'] / dft['n_converged'], 1)}}}",
+        f"\\newcommand{{\\MacroCns5ht2bNoMem}}{{{_r(safety_v2['5ht2b_le_5p8_gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroCns5ht2bMem}}{{{_r(murcko['5ht2b_le_5p8_gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroCnsHergNoMem}}{{{_r(safety_v2['herg_le_5p5_gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroCnsHergMem}}{{{_r(murcko['herg_le_5p5_gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroDftS1Ge380Cnt}}{{{int(dft['s1_ge_380_vis'])}}}",
+        f"\\newcommand{{\\MacroDftS1Ge380Of}}{{{nc}}}",
+        f"\\newcommand{{\\MacroDftS1In400450Cnt}}{{{int(dft['s1_in_400_450'])}}}",
+        f"\\newcommand{{\\MacroDftBrightCnt}}{{{int(dft['bright_in_380_470_and_f_ge_0p05'])}}}",
         f"\\newcommand{{\\MacroDftConvFrac}}{{{_pct(dft['n_converged'] / dft['n_total'], 1)}}}",
         f"\\newcommand{{\\MacroDftMaeGnn}}{{{_r(dft['mae_4gnn_vs_s1_nm'], 1)}}}",
+        f"\\newcommand{{\\MacroPlHoldInbandGnn}}{{{_r(pl['prior']['in_band_4gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroPlHoldInbandEt}}{{{_r(pl['prior']['in_band_holdout_et'], 3)}}}",
+        f"\\newcommand{{\\MacroPlHoldInbandGnnFin}}{{{_r(pl['compliance_reinvent_4gnn']['in_band_4gnn'], 3)}}}",
+        f"\\newcommand{{\\MacroPlHoldInbandEtFin}}{{{_r(pl['compliance_reinvent_4gnn']['in_band_holdout_et'], 3)}}}",
         "",
     ]
     return "\n".join(lines)
@@ -132,8 +144,9 @@ def build_tab_predictors() -> str:
         )
 
     foot = (
-        f"\\multicolumn{{8}}{{@{{}}l}}{{\\footnotesize $^a$ 3-GNN ensemble "
-        f"(\\texttt{{GINE}}+\\texttt{{GATv2}}+\\texttt{{CARATE}}). "
+        f"\\multicolumn{{8}}{{@{{}}l}}{{\\footnotesize $^a$ Anti-target rows: 3-GNN ensemble "
+        f"(\\texttt{{GINE}}+\\texttt{{GATv2}}+\\texttt{{CARATE}}); MPNN omitted for 5-HT2B/hERG. "
+        f"UV-Vis ensemble has lower MAE than holdout ExtraTrees but slightly lower $R^2$ (0.922 vs 0.928). "
         f"Baseline Morgan-HGB on UV-Vis: {_r(_load('uv/artifacts/predictor_metrics.json')['mae_nm'], 2)}~nm.}}"
     )
     rows = [uv_row(), pl_row()]
@@ -187,21 +200,21 @@ def build_tab_uvvis() -> str:
     return f"""% Auto-generated — do not edit.
 \\begin{{table}}[t]
 \\centering
-\\caption{{Track 1 (UV-Vis 400--450~nm): three-seed progression (10{{,}}000 fresh samples/seed, mean $\\pm$ SD). Holdout ExtraTrees is never used in training.}}
+\\caption{{Track 1 (UV-Vis 400--450~nm): in-band fraction $\\phi_{{[400,450]}}$ by audit oracle. Final row: three prior seeds, 10{{,}}000 samples each (mean $\\pm$ SD). Holdout ExtraTrees never enters training rewards.}}
 \\label{{tab:uvvis}}
 \\scriptsize
 \\resizebox{{\\textwidth}}{{!}}{{
-\\begin{{tabular}}{{@{{}}lrrrrrr@{{}}}}
+\\begin{{tabular}}{{@{{}}lrrrrrrr@{{}}}}
 \\toprule
-Method & Holdout ET & 4-GNN Ens. & Morgan-HGB & Uniq. & Rule & Int.\\ div. \\\\
+Method & Holdout ET & Ens.\\ 4-GNN & \\texttt{{GINE}} only & Morgan-HGB & Uniq. & Rule & Int.\\ div. \\\\
 \\midrule
-Plain ZINC250k prior & {_r(pz['holdout_et_inband'], 3)} & {_r(pz['gnn_gine_inband_a'], 3)}$^a$ & {_pm(plain['mean'], plain['sd'])} & 1.000 & {_r(pz['rule_pass'], 3)} & {_r(pz['int_div'], 3)} \\\\
-Prefix conditioning & {_r(pf['holdout_et_inband'], 3)} & -- & {_pm(steered['mean'], steered['sd'])} & 1.000 & {_r(pf['rule_pass'], 3)} & {_r(pf['int_div'], 3)} \\\\
-REINVENT Round~2 (\\texttt{{a29221}}) & {_r(r2['holdout_mean_sd'][0], 3)}$\\pm${_r(r2['holdout_mean_sd'][1], 3)} & -- & {_r(r2['morgan_mean_sd'][0], 3)}$\\pm${_r(r2['morgan_mean_sd'][1], 3)} & {_r(r2['uniqueness_mean_sd'][0], 3)}$\\pm${_r(r2['uniqueness_mean_sd'][1], 3)} & {_r(r2['rule_mean_sd'][0], 3)}$\\pm${_r(r2['rule_mean_sd'][1], 3)} & {_r(r2['int_div_mean_sd'][0], 3)}$\\pm${_r(r2['int_div_mean_sd'][1], 3)} \\\\
-REINVENT Round~3 (\\texttt{{403657}}, Morgan) & 0.728$\\pm$0.093 & 0.514$^a$ & {_pm(r3['in_band_surr']['mean'], r3['in_band_surr']['sd'])} & {_pm(r3['uniqueness']['mean'], r3['uniqueness']['sd'])} & {_pm(r3['rule_pass_rate']['mean'], r3['rule_pass_rate']['sd'])} & {_pm(r3['int_div']['mean'], r3['int_div']['sd'])} \\\\
-\\textbf{{REINVENT 4-GNN + Morgan (\\texttt{{403657}})}} & \\textbf{{{_pm(r3['in_band_holdout']['mean'], r3['in_band_holdout']['sd'])}}} & \\textbf{{{_pm(r3['in_band_4gnn']['mean'], r3['in_band_4gnn']['sd'])}}} & {_pm(r3['in_band_surr']['mean'], r3['in_band_surr']['sd'])} & \\textbf{{{_pm(r3['uniqueness']['mean'], r3['uniqueness']['sd'])}}} & \\textbf{{{_pm(r3['rule_pass_rate']['mean'], r3['rule_pass_rate']['sd'])}}} & {_pm(r3['int_div']['mean'], r3['int_div']['sd'])} \\\\
+Plain ZINC250k prior & {_r(pz['holdout_et_inband'], 3)} & -- & {_r(pz['gnn_gine_inband_a'], 3)} & {_pm(plain['mean'], plain['sd'])} & 1.000 & {_r(pz['rule_pass'], 3)} & {_r(pz['int_div'], 3)} \\\\
+Prefix conditioning & {_r(pf['holdout_et_inband'], 3)} & -- & -- & {_pm(steered['mean'], steered['sd'])} & 1.000 & {_r(pf['rule_pass'], 3)} & {_r(pf['int_div'], 3)} \\\\
+REINVENT Round~2 (\\texttt{{a29221}}) & {_r(r2['holdout_mean_sd'][0], 3)}$\\pm${_r(r2['holdout_mean_sd'][1], 3)} & -- & -- & {_r(r2['morgan_mean_sd'][0], 3)}$\\pm${_r(r2['morgan_mean_sd'][1], 3)} & {_r(r2['uniqueness_mean_sd'][0], 3)}$\\pm${_r(r2['uniqueness_mean_sd'][1], 3)} & {_r(r2['rule_mean_sd'][0], 3)}$\\pm${_r(r2['rule_mean_sd'][1], 3)} & {_r(r2['int_div_mean_sd'][0], 3)}$\\pm${_r(r2['int_div_mean_sd'][1], 3)} \\\\
+REINVENT Round~3 (\\texttt{{403657}}, Morgan) & 0.728$\\pm$0.093 & -- & 0.514 & {_pm(r3['in_band_surr']['mean'], r3['in_band_surr']['sd'])} & {_pm(r3['uniqueness']['mean'], r3['uniqueness']['sd'])} & {_pm(r3['rule_pass_rate']['mean'], r3['rule_pass_rate']['sd'])} & {_pm(r3['int_div']['mean'], r3['int_div']['sd'])} \\\\
+\\textbf{{REINVENT 4-GNN + Morgan (\\texttt{{403657}})}} & \\textbf{{{_pm(r3['in_band_holdout']['mean'], r3['in_band_holdout']['sd'])}}} & \\textbf{{{_pm(r3['in_band_4gnn']['mean'], r3['in_band_4gnn']['sd'])}}} & -- & {_pm(r3['in_band_surr']['mean'], r3['in_band_surr']['sd'])} & \\textbf{{{_pm(r3['uniqueness']['mean'], r3['uniqueness']['sd'])}}} & \\textbf{{{_pm(r3['rule_pass_rate']['mean'], r3['rule_pass_rate']['sd'])}}} & {_pm(r3['int_div']['mean'], r3['int_div']['sd'])} \\\\
 \\bottomrule
-\\multicolumn{{7}}{{@{{}}l}}{{\\footnotesize $^a$ Scored on \\texttt{{GINE}} (3{{,}}000 samples, prior seed~1). $^\\dagger$ Holdout prior estimate from steering eval logs. Validity and novelty are 1.000 across all REINVENT runs.}}
+\\multicolumn{{8}}{{@{{}}l}}{{\\footnotesize \\texttt{{GINE}}-only column: $n=3{{,}}000$, prior seed~1 (\\texttt{{uvvis\_steering\_progression.json}}). Post-hoc 4-GNN ensemble scoring uses the three-seed 10{{,}}000-sample protocol (\\texttt{{4gnn\_ensemble\_summary.json}}). Validity and novelty are 1.000 across REINVENT runs.}}
 \\end{{tabular}}
 }}
 \\end{{table}}
@@ -214,7 +227,7 @@ def build_tab_plastics() -> str:
     return f"""% Auto-generated
 \\begin{{table}}[t]
 \\centering
-\\caption{{Track 2 (Plastics, $T_g$ 450--550~K, REACH+BPA-free): 3{{,}}000 fresh P-SMILES samples.}}
+\\caption{{Track 2 (Plastics, $T_g$ 450--550~K, REACH+BPA-free): single RL run, $n=3{{,}}000$ post-training samples. Fractions use valid samples as denominators. Both+Comp.: compliant and in-band under both 4-GNN ensemble and holdout ExtraTrees.}}
 \\label{{tab:plastics}}
 \\scriptsize
 \\resizebox{{\\textwidth}}{{!}}{{
@@ -234,6 +247,9 @@ P-SMILES GRU prior & {_r(p['psmiles_valid'], 3)} & {_r(p['compliance_pass'], 3)}
 def build_tab_pharma() -> str:
     ph = _load("pharma/pharma_summary_v3.json")
     v2 = _load("pharma/pharma_summary_v2.json")
+    n = int(ph["zinc_prior"]["n_samples"])
+    both_no = int(round(v2["cns_safe_reinvent_v2"]["all_criteria_both"] * n))
+    both_scaf = int(round(ph["cns_safe_reinvent_v3_scaffold"]["all_criteria_both"] * n))
 
     def row(name: str, d: dict, bold: bool = False) -> str:
         b = "\\textbf{" if bold else ""
@@ -263,6 +279,7 @@ Model & \\texttt{{5-HT1A}}$\\ge 7$ (GNN/ET) & \\texttt{{5-HT2B}}$\\le 5.8$ & \\t
 {row('Safety-REINVENT (no scaf. mem.)', v2['cns_safe_reinvent_v2'])}
 {row('Safety-REINVENT + Murcko mem.', ph['cns_safe_reinvent_v3_scaffold'], bold=True)}
 \\bottomrule
+\\multicolumn{{10}}{{@{{}}l}}{{\\footnotesize Dual-GNN consensus (all criteria on both oracles): {both_no}/{n} without scaffold memory vs {both_scaf}/{n} with Murcko cap (\\texttt{{pharma\_summary\_v2/v3.json}}). Single training seed per row; sample SD not estimated.}}
 \\end{{tabular}}
 }}
 \\end{{table}}
